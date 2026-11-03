@@ -39,6 +39,7 @@ export function resolveCodex(configuredPath: string): CodexCommand {
   if (process.env.APPDATA) candidates.push(resolve(process.env.APPDATA, 'npm', 'node_modules', ...PACKAGE_ENTRY));
   const root = npmGlobalRoot();
   if (root) candidates.push(resolve(root, ...PACKAGE_ENTRY));
+  candidates.push(...codexOnPath());
 
   for (const candidate of candidates) {
     const command = toCommand(candidate);
@@ -47,6 +48,19 @@ export function resolveCodex(configuredPath: string): CodexCommand {
   throw new Error(
     'Codex CLI not found. Install it with "npm i -g @openai/codex" or set its path in Settings.',
   );
+}
+
+/** Codex installs that aren't from npm (e.g. a standalone codex.exe) are found on PATH. */
+function codexOnPath(): string[] {
+  try {
+    const finder = process.platform === 'win32' ? 'where codex' : 'which codex';
+    return execSync(finder, { encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] })
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function toCommand(path: string): CodexCommand | null {
@@ -61,6 +75,8 @@ function toCommand(path: string): CodexCommand | null {
   if (ext === '' || ext === '.cmd' || ext === '.ps1') {
     const script = resolve(dirname(path), 'node_modules', ...PACKAGE_ENTRY);
     if (existsSync(script)) return { file: process.execPath, prefixArgs: [script], path: script };
+    // A standalone binary on macOS/Linux has no extension and runs directly.
+    if (ext === '' && process.platform !== 'win32' && existsSync(path)) return { file: path, prefixArgs: [], path };
   }
   return null;
 }

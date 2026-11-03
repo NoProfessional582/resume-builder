@@ -226,7 +226,7 @@ function AgentSettingsCard() {
             onChange={(e) => update({ timeoutSeconds: Number(e.target.value) })}
           />
         </Field>
-        <Field label="Codex path" hint="Leave blank to find the global npm install automatically.">
+        <Field label="Codex path" hint="Leave blank to find it automatically (global npm install, then PATH).">
           <input className={inputClass} value={draft.codexPath} placeholder="Auto-detect" onChange={(e) => update({ codexPath: e.target.value })} />
         </Field>
         <label className="flex items-start gap-3 sm:col-span-2">
