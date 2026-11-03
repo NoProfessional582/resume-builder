@@ -317,11 +317,12 @@ class Runner {
       let stderr = '';
       let agentError: string | null = null;
       let timedOut = false;
+      const timeoutSeconds = Math.max(settings.timeoutSeconds, task.minTimeoutSeconds ?? 0);
 
       const timer = setTimeout(() => {
         timedOut = true;
         killTree(child);
-      }, settings.timeoutSeconds * 1000);
+      }, timeoutSeconds * 1000);
 
       child.stdin.on('error', () => {}); // codex may exit before reading stdin
       child.stdin.end(prompt);
@@ -357,7 +358,7 @@ class Runner {
       child.on('close', (code) => {
         if (this.cancelled.has(id)) return done({ ok: false, fatal: true, error: 'Cancelled.' });
         if (timedOut) {
-          return done({ ok: false, fatal: true, error: `Timed out after ${settings.timeoutSeconds}s.` });
+          return done({ ok: false, fatal: true, error: `Timed out after ${timeoutSeconds}s.` });
         }
         if (code !== 0) {
           const detail = agentError ?? lastLines(stderr) ?? `exit code ${code}`;

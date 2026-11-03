@@ -1,3 +1,4 @@
+import type { ImportView, PreviewResult, Role, TemplateSummary } from './resumeTypes';
 import type { CodexStatus, Run, RunDetail, Settings } from './types';
 
 export class ApiError extends Error {
@@ -30,4 +31,26 @@ export const api = {
   listRuns: () => request<Run[]>('GET', '/runs'),
   getRun: (id: number) => request<RunDetail>('GET', `/runs/${id}`),
   cancelRun: (id: number) => request<{ cancelled: boolean }>('POST', `/runs/${id}/cancel`, {}),
+
+  uploadResume: async (file: File) => {
+    const res = await fetch('/api/imports', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'x-filename': encodeURIComponent(file.name),
+      },
+      body: file,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new ApiError(res.status, data?.error ?? `${res.status} ${res.statusText}`);
+    return data as { id: number; runId: number };
+  },
+  getImport: (id: number) => request<ImportView>('GET', `/imports/${id}`),
+  updateBlock: (id: number, index: number, change: { role?: Role; pattern?: string | null }) =>
+    request<ImportView>('PUT', `/imports/${id}/blocks/${index}`, change),
+  previewImport: (id: number) => request<PreviewResult>('POST', `/imports/${id}/preview`, {}),
+  saveImport: (id: number, replaceContent: boolean) =>
+    request<{ templateId: number }>('POST', `/imports/${id}/save`, { replaceContent }),
+  getTemplate: () => request<TemplateSummary>('GET', '/template'),
+  previewProfile: () => request<{ pages: number }>('POST', '/template/preview', {}),
 };

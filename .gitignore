@@ -3,3 +3,6 @@ data/
 web/dist/
 *.log
 .env
+# Personal resume files dropped in the project root
+/*.docx
+/*.pdf

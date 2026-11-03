@@ -7,4 +7,6 @@ export interface TaskDef<I, O> {
   /** Shape of the final JSON. Use `.nullable()` rather than `.optional()` (strict schema rules). */
   output: z.ZodType<O>;
   buildPrompt(input: I): string;
+  /** Minimum timeout for this task; the larger of this and the settings value is used. */
+  minTimeoutSeconds?: number;
 }

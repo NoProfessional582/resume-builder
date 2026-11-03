@@ -6,6 +6,7 @@ import { runner } from './agent/runner.ts';
 import { config } from './config.ts';
 import { migrate } from './db.ts';
 import { apiRoutes } from './routes/api.ts';
+import { templateRoutes } from './routes/template.ts';
 
 migrate();
 runner.recoverInterrupted();
@@ -23,14 +24,18 @@ app.setErrorHandler((err, _req, reply) => {
 });
 
 await app.register(apiRoutes, { prefix: '/api' });
+await app.register(templateRoutes, { prefix: '/api' });
 
 // Serve the built web app (npm run build). In development Vite serves it instead.
 const hasWebBuild = existsSync(config.webDist);
 if (hasWebBuild) {
-  await app.register(fastifyStatic, { root: config.webDist, wildcard: false });
+  // Files are looked up per request, so a rebuild is picked up without a restart.
+  await app.register(fastifyStatic, { root: config.webDist });
 }
 app.setNotFoundHandler((req, reply) => {
-  if (req.url.startsWith('/api/') || !hasWebBuild || req.method !== 'GET') {
+  const path = req.url.split('?')[0];
+  const looksLikeFile = /\.[a-z0-9]+$/i.test(path);
+  if (path.startsWith('/api/') || looksLikeFile || !hasWebBuild || req.method !== 'GET') {
     return reply.code(404).send({ error: 'Not found' });
   }
   return reply.sendFile('index.html'); // client-side routing

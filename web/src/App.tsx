@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { Layout } from './components/Layout';
 import { ComingSoon } from './pages/ComingSoon';
+import { ImportPage } from './pages/ImportPage';
+import { TemplatePage } from './pages/TemplatePage';
 import { RunDetailPage } from './pages/RunDetailPage';
 import { RunsPage } from './pages/RunsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -10,17 +12,9 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<Navigate to="/settings" replace />} />
-          <Route
-            path="template"
-            element={
-              <ComingSoon
-                title="Template"
-                milestone="M1"
-                description="Upload your current resume (.docx). The app imports your positions and bullets, and turns the file into a template so tailored resumes keep your formatting."
-              />
-            }
-          />
+          <Route index element={<Navigate to="/template" replace />} />
+          <Route path="template" element={<TemplatePage />} />
+          <Route path="template/import/:id" element={<ImportPage />} />
           <Route
             path="history"
             element={

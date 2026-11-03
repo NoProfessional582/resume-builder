@@ -29,14 +29,21 @@ export function migrate(): void {
   }
 }
 
+let depth = 0;
+
+/** Runs fn atomically. Nested calls become savepoints inside the outer transaction. */
 export function transaction<T>(fn: () => T): T {
-  db.exec('BEGIN');
+  const savepoint = `sp${depth}`;
+  db.exec(depth === 0 ? 'BEGIN' : `SAVEPOINT ${savepoint}`);
+  depth++;
   try {
     const result = fn();
-    db.exec('COMMIT');
+    depth--;
+    db.exec(depth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
     return result;
   } catch (err) {
-    db.exec('ROLLBACK');
+    depth--;
+    db.exec(depth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
     throw err;
   }
 }
