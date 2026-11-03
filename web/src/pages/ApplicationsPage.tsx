@@ -3,11 +3,16 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api } from '../api';
 import type { ApplicationInput } from '../applicationTypes';
-import { AutoTextarea, Badge, Button, Card, ErrorText, Field, inputClass, PageHeader } from '../components/ui';
+import { AutoTextarea, Badge, Button, Card, ErrorText, Field, inputClass, LinkButton, PageHeader } from '../components/ui';
 import { formatTime } from '../lib/format';
 
 export function ApplicationsPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: api.deleteApplication,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['applications'] }),
+  });
   const list = useQuery({
     queryKey: ['applications'],
     queryFn: api.listApplications,
@@ -26,6 +31,7 @@ export function ApplicationsPage() {
         }
       />
       {list.error && <ErrorText>{list.error.message}</ErrorText>}
+      {remove.error && <ErrorText>{remove.error.message}</ErrorText>}
       {list.data && list.data.length === 0 && (
         <Card>
           <p className="text-sm text-slate-600">
@@ -70,6 +76,19 @@ export function ApplicationsPage() {
                   </span>
                 )}
                 <span>· {formatTime(a.createdAt)}</span>
+                <LinkButton
+                  danger
+                  disabled={remove.isPending}
+                  onClick={(e) => {
+                    // The whole card is a link; don't open it.
+                    e.preventDefault();
+                    if (window.confirm(`Delete the ${a.roleTitle} application at ${a.company}, with its analysis and tailored résumés?`)) {
+                      remove.mutate(a.id);
+                    }
+                  }}
+                >
+                  Delete
+                </LinkButton>
               </div>
             </div>
           </Link>
