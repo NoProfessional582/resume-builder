@@ -130,3 +130,7 @@ Layout:
 
 Environment variables: `PORT` (default 4310), `HOST` (default 127.0.0.1), `RB_DATA_DIR` (default
 `data/`), `RB_CODEX_PATH` (path to Codex, if it can't be found automatically).
+
+## License
+
+[MIT](LICENSE)
