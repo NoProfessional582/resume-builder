@@ -140,3 +140,37 @@ export function killTree(child: ChildProcess): void {
     child.kill('SIGKILL');
   }
 }
+
+export interface CodexModel {
+  slug: string;
+  displayName: string;
+  description: string;
+}
+
+let modelsCache: { path: string; at: number; models: CodexModel[] } | null = null;
+const MODELS_TTL_MS = 10 * 60 * 1000;
+
+/** The models Codex offers for selection, from `codex debug models` (hidden ones left out). */
+export async function listCodexModels(configuredPath: string): Promise<CodexModel[]> {
+  const cmd = resolveCodex(configuredPath);
+  if (modelsCache?.path === cmd.path && Date.now() - modelsCache.at < MODELS_TTL_MS) return modelsCache.models;
+  const result = await runCodexCommand(cmd, ['debug', 'models']);
+  if (result.code !== 0) throw new Error(`Couldn't list Codex models: ${(result.stderr || result.stdout).trim().slice(-300)}`);
+  let raw: unknown;
+  try {
+    raw = JSON.parse(result.stdout);
+  } catch {
+    throw new Error("Couldn't read Codex's model list.");
+  }
+  const list = (Array.isArray(raw) ? raw : (raw as { models?: unknown[] }).models) ?? [];
+  const models = (list as Record<string, unknown>[])
+    .filter((m) => typeof m.slug === 'string' && m.visibility !== 'hide')
+    .sort((a, b) => Number(a.priority ?? 0) - Number(b.priority ?? 0))
+    .map((m) => ({
+      slug: m.slug as string,
+      displayName: typeof m.display_name === 'string' ? m.display_name : (m.slug as string),
+      description: typeof m.description === 'string' ? m.description : '',
+    }));
+  modelsCache = { path: cmd.path, at: Date.now(), models };
+  return models;
+}

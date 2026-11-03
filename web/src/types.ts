@@ -65,3 +65,9 @@ export interface CodexStatus {
 
 export const isFinal = (status: RunStatus) =>
   status === 'succeeded' || status === 'failed' || status === 'cancelled';
+
+export interface CodexModel {
+  slug: string;
+  displayName: string;
+  description: string;
+}

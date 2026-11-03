@@ -201,9 +201,7 @@ function AgentSettingsCard() {
           save.mutate(draft);
         }}
       >
-        <Field label="Model" hint="Leave blank to use Codex's default model.">
-          <input className={inputClass} value={draft.model} placeholder="Codex default" onChange={(e) => update({ model: e.target.value })} />
-        </Field>
+        <ModelField value={draft.model} onChange={(model) => update({ model })} />
         <Field label="Reasoning effort" hint="Higher is slower but more careful.">
           <select
             className={inputClass}
@@ -254,5 +252,36 @@ function AgentSettingsCard() {
         {save.error && <div className="sm:col-span-2"><ErrorText>{save.error.message}</ErrorText></div>}
       </form>
     </Card>
+  );
+}
+
+/** The models Codex offers, as a dropdown. Falls back to a text box if Codex can't list them. */
+function ModelField({ value, onChange }: { value: string; onChange: (model: string) => void }) {
+  const models = useQuery({ queryKey: ['codex-models'], queryFn: api.codexModels, staleTime: 10 * 60 * 1000, retry: false });
+
+  if (models.error) {
+    return (
+      <Field label="Model" hint={`Couldn't load the model list (${models.error.message}). Type a model name, or leave blank for Codex's default.`}>
+        <input className={inputClass} value={value} placeholder="Codex default" onChange={(e) => onChange(e.target.value)} />
+      </Field>
+    );
+  }
+
+  const list = models.data ?? [];
+  const selected = list.find((m) => m.slug === value);
+  // Keep a saved model that Codex no longer lists, so opening Settings doesn't silently change it.
+  const unlisted = value && models.data && !selected;
+  return (
+    <Field label="Model" hint={selected?.description || "Codex default uses the model from Codex's own settings."}>
+      <select className={inputClass} value={value} onChange={(e) => onChange(e.target.value)} disabled={models.isPending}>
+        <option value="">{models.isPending ? 'Loading models…' : 'Codex default'}</option>
+        {list.map((m) => (
+          <option key={m.slug} value={m.slug}>
+            {m.displayName}
+          </option>
+        ))}
+        {unlisted && <option value={value}>{value} (not in Codex's list)</option>}
+      </select>
+    </Field>
   );
 }

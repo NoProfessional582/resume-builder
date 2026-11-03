@@ -9,8 +9,8 @@ import type {
 } from './profileTypes';
 import type { Application, ApplicationInput, ApplicationSummary, JobAnalysis, ParsedPosting } from './applicationTypes';
 import type { ImportView, PreviewResult, Role, TemplateSummary } from './resumeTypes';
-import type { TailoredContent, TailoredSummary, TailoredView, TailorSettings } from './tailoringTypes';
-import type { CodexStatus, Run, RunDetail, Settings } from './types';
+import type { ReviewView, TailoredContent, TailoredSummary, TailoredView, TailorSettings } from './tailoringTypes';
+import type { CodexModel, CodexStatus, Run, RunDetail, Settings } from './types';
 
 export class ApiError extends Error {
   status: number;
@@ -38,6 +38,7 @@ export const api = {
   getSettings: () => request<Settings>('GET', '/settings'),
   saveSettings: (patch: Partial<Settings>) => request<Settings>('PUT', '/settings', patch),
   codexStatus: () => request<CodexStatus>('GET', '/codex/status'),
+  codexModels: () => request<CodexModel[]>('GET', '/codex/models'),
   testCodex: () => request<{ runId: number }>('POST', '/codex/test', {}),
   listRuns: () => request<Run[]>('GET', '/runs'),
   getRun: (id: number) => request<RunDetail>('GET', `/runs/${id}`),
@@ -107,6 +108,8 @@ export const api = {
   deleteTailored: (id: number) => request<void>('DELETE', `/tailored/${id}`),
   reviseTailored: (id: number, instruction: string) => request<TailoredView>('POST', `/tailored/${id}/revise`, { instruction }),
   fitTailored: (id: number, targetPages: number) => request<TailoredView>('POST', `/tailored/${id}/fit`, { targetPages }),
+  getReview: (id: number) => request<ReviewView | null>('GET', `/tailored/${id}/review`),
+  startReview: (id: number) => request<ReviewView>('POST', `/tailored/${id}/review`, {}),
 
   listBackups: () => request<{ name: string; size: number; createdAt: number }[]>('GET', '/backups'),
   createBackup: () => request<{ name: string; size: number; createdAt: number }>('POST', '/backups', {}),

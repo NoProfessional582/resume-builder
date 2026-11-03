@@ -17,6 +17,7 @@ import {
   type TailoredView,
   type TailorSettings,
 } from '../tailoringTypes';
+import { ReviewCard } from './ReviewCard';
 
 /** inputClass without w-full, for controls that sit inline next to a button. */
 const inlineInput = inputClass.replace('w-full ', '');
@@ -311,225 +312,228 @@ function Editor({
   const overTarget = view.generated?.pages != null && view.generated.pages > view.settings.targetPages;
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
-      <div className="min-w-0 space-y-5">
-        {view.generated && showPdf && (
-          <Card title="Preview" actions={<LinkButton onClick={() => setShowPdf(false)}>Hide</LinkButton>}>
-            <iframe title="Résumé preview" className="h-[80vh] w-full rounded border border-slate-200" src={`/api/tailored/${view.id}/files/pdf?t=${fileKey}`} />
+    <div className="space-y-5">
+      <ReviewCard versionId={view.id} dirty={dirty} />
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="min-w-0 space-y-5">
+          {view.generated && showPdf && (
+            <Card title="Preview" actions={<LinkButton onClick={() => setShowPdf(false)}>Hide</LinkButton>}>
+              <iframe title="Résumé preview" className="h-[80vh] w-full rounded border border-slate-200" src={`/api/tailored/${view.id}/files/pdf?t=${fileKey}`} />
+            </Card>
+          )}
+
+          <Card title="Summary">
+            <AutoTextarea
+              minRows={4}
+              value={content.summary.join('\n\n')}
+              onChange={(e) => set({ summary: e.target.value.split(/\n\s*\n/) })}
+            />
+            <BlockWarnings warnings={warnings.filter((w) => w.positionId === null)} />
           </Card>
-        )}
 
-        <Card title="Summary">
-          <AutoTextarea
-            minRows={4}
-            value={content.summary.join('\n\n')}
-            onChange={(e) => set({ summary: e.target.value.split(/\n\s*\n/) })}
-          />
-          <BlockWarnings warnings={warnings.filter((w) => w.positionId === null)} />
-        </Card>
+          <Card title="Skills">
+            {content.skills.map((g, gi) => (
+              <div key={gi} className="mb-3 last:mb-0">
+                {(content.skills.length > 1 || g.category) && (
+                  <input
+                    className={`${inputClass} mb-2`}
+                    value={g.category ?? ''}
+                    placeholder="Category"
+                    onChange={(e) =>
+                      set({ skills: content.skills.map((x, j) => (j === gi ? { ...x, category: e.target.value || null } : x)) })
+                    }
+                  />
+                )}
+                <ListTextInput
+                  separator="line"
+                  minRows={4}
+                  value={g.items}
+                  onChange={(items) => set({ skills: content.skills.map((x, j) => (j === gi ? { ...x, items } : x)) })}
+                  aria-label="Skills, one per line"
+                />
+              </div>
+            ))}
+            <SkillLimits skills={content.skills} />
+          </Card>
 
-        <Card title="Skills">
-          {content.skills.map((g, gi) => (
-            <div key={gi} className="mb-3 last:mb-0">
-              {(content.skills.length > 1 || g.category) && (
-                <input
-                  className={`${inputClass} mb-2`}
-                  value={g.category ?? ''}
-                  placeholder="Category"
-                  onChange={(e) =>
-                    set({ skills: content.skills.map((x, j) => (j === gi ? { ...x, category: e.target.value || null } : x)) })
+          {content.positions.map((p, pi) => (
+            <Card key={p.positionId} title={`${p.title} · ${p.organization}`}>
+              <p className="-mt-2 mb-3 text-xs text-slate-500">{[p.location, displayRange(p.start, p.end)].filter(Boolean).join(' · ')}</p>
+              {(p.description !== null || view.settings.includeDescriptions) && (
+                <Field label="Role overview">
+                  <AutoTextarea minRows={2} value={p.description ?? ''} onChange={(e) => setPosition(pi, { description: e.target.value || null })} />
+                </Field>
+              )}
+              <BlockWarnings warnings={warningsFor(p.positionId, null)} />
+              <div className="mt-4 space-y-3">
+                {p.bullets.map((b, bi) => (
+                  <BulletEditor
+                    key={bi}
+                    bullet={b}
+                    stories={view.stories}
+                    warnings={warningsFor(p.positionId, bi)}
+                    first={bi === 0}
+                    last={bi === p.bullets.length - 1}
+                    onChange={(nb) => setPosition(pi, { bullets: p.bullets.map((x, j) => (j === bi ? nb : x)) })}
+                    onMove={(d) => {
+                      const bullets = [...p.bullets];
+                      [bullets[bi], bullets[bi + d]] = [bullets[bi + d], bullets[bi]];
+                      setPosition(pi, { bullets });
+                    }}
+                    onRemove={() => setPosition(pi, { bullets: p.bullets.filter((_, j) => j !== bi) })}
+                  />
+                ))}
+                <AddBullet
+                  positionId={p.positionId}
+                  stories={view.stories}
+                  used={new Set(p.bullets.flatMap((b) => b.sourceStoryIds))}
+                  onAdd={(b) => setPosition(pi, { bullets: [...p.bullets, b] })}
+                />
+              </div>
+            </Card>
+          ))}
+
+          {(content.education.length > 0 || content.certifications.length > 0 || content.entries.length > 0) && (
+            <Card title="Education, certifications and other sections">
+              <p className="mb-3 text-xs text-slate-500">Printed as in your profile. Remove anything that doesn't belong on this résumé.</p>
+              <RemovableList
+                items={content.education.map((e) => [e.degree, e.school, e.details].filter(Boolean).join(', '))}
+                onRemove={(i) => set({ education: content.education.filter((_, j) => j !== i) })}
+              />
+              <RemovableList
+                items={content.certifications.map((c) => [c.name, c.date].filter(Boolean).join(', '))}
+                onRemove={(i) => set({ certifications: content.certifications.filter((_, j) => j !== i) })}
+              />
+              {content.entries.map((e, ei) => (
+                <RemovableList
+                  key={ei}
+                  items={e.items.map((t) => `${e.heading}: ${t}`)}
+                  onRemove={(i) =>
+                    set({
+                      entries: content.entries
+                        .map((x, j) => (j === ei ? { ...x, items: x.items.filter((_, k) => k !== i) } : x))
+                        .filter((x) => x.items.length),
+                    })
                   }
                 />
-              )}
-              <ListTextInput
-                separator="line"
-                minRows={4}
-                value={g.items}
-                onChange={(items) => set({ skills: content.skills.map((x, j) => (j === gi ? { ...x, items } : x)) })}
-                aria-label="Skills, one per line"
-              />
-            </div>
-          ))}
-          <SkillLimits skills={content.skills} />
-        </Card>
-
-        {content.positions.map((p, pi) => (
-          <Card key={p.positionId} title={`${p.title} · ${p.organization}`}>
-            <p className="-mt-2 mb-3 text-xs text-slate-500">{[p.location, displayRange(p.start, p.end)].filter(Boolean).join(' · ')}</p>
-            {(p.description !== null || view.settings.includeDescriptions) && (
-              <Field label="Role overview">
-                <AutoTextarea minRows={2} value={p.description ?? ''} onChange={(e) => setPosition(pi, { description: e.target.value || null })} />
-              </Field>
-            )}
-            <BlockWarnings warnings={warningsFor(p.positionId, null)} />
-            <div className="mt-4 space-y-3">
-              {p.bullets.map((b, bi) => (
-                <BulletEditor
-                  key={bi}
-                  bullet={b}
-                  stories={view.stories}
-                  warnings={warningsFor(p.positionId, bi)}
-                  first={bi === 0}
-                  last={bi === p.bullets.length - 1}
-                  onChange={(nb) => setPosition(pi, { bullets: p.bullets.map((x, j) => (j === bi ? nb : x)) })}
-                  onMove={(d) => {
-                    const bullets = [...p.bullets];
-                    [bullets[bi], bullets[bi + d]] = [bullets[bi + d], bullets[bi]];
-                    setPosition(pi, { bullets });
-                  }}
-                  onRemove={() => setPosition(pi, { bullets: p.bullets.filter((_, j) => j !== bi) })}
-                />
               ))}
-              <AddBullet
-                positionId={p.positionId}
-                stories={view.stories}
-                used={new Set(p.bullets.flatMap((b) => b.sourceStoryIds))}
-                onAdd={(b) => setPosition(pi, { bullets: [...p.bullets, b] })}
-              />
-            </div>
-          </Card>
-        ))}
-
-        {(content.education.length > 0 || content.certifications.length > 0 || content.entries.length > 0) && (
-          <Card title="Education, certifications and other sections">
-            <p className="mb-3 text-xs text-slate-500">Printed as in your profile. Remove anything that doesn't belong on this résumé.</p>
-            <RemovableList
-              items={content.education.map((e) => [e.degree, e.school, e.details].filter(Boolean).join(', '))}
-              onRemove={(i) => set({ education: content.education.filter((_, j) => j !== i) })}
-            />
-            <RemovableList
-              items={content.certifications.map((c) => [c.name, c.date].filter(Boolean).join(', '))}
-              onRemove={(i) => set({ certifications: content.certifications.filter((_, j) => j !== i) })}
-            />
-            {content.entries.map((e, ei) => (
-              <RemovableList
-                key={ei}
-                items={e.items.map((t) => `${e.heading}: ${t}`)}
-                onRemove={(i) =>
-                  set({
-                    entries: content.entries
-                      .map((x, j) => (j === ei ? { ...x, items: x.items.filter((_, k) => k !== i) } : x))
-                      .filter((x) => x.items.length),
-                  })
-                }
-              />
-            ))}
-          </Card>
-        )}
-
-        {dirty && (
-          <div className="sticky bottom-0 z-10 flex items-center gap-2 border-t border-slate-200 bg-slate-50/95 py-3">
-            <Button variant="primary" onClick={() => save.mutate()} disabled={save.isPending}>
-              {save.isPending ? 'Saving…' : 'Save changes'}
-            </Button>
-            <Button onClick={() => setContent(structuredClone(view.content!))}>Discard</Button>
-            <span className="text-xs text-slate-500">Checks update after saving.</span>
-          </div>
-        )}
-      </div>
-
-      <aside className="order-first space-y-5 lg:sticky lg:top-6 lg:order-none">
-        <Card title="Word file">
-          <div className="space-y-3 text-sm">
-            {view.generated ? (
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span>
-                    {view.generated.pages ?? '?'} page{view.generated.pages === 1 ? '' : 's'}
-                  </span>
-                  {view.generated.pages != null && view.generated.pages > view.settings.targetPages && (
-                    <Badge tone="amber">over {view.settings.targetPages}-page target</Badge>
-                  )}
-                  {view.generated.stale && <Badge tone="amber">out of date</Badge>}
-                </div>
-                <div className="text-xs text-slate-500">Built {formatTime(view.generated.at)}</div>
-                <div className="flex gap-3">
-                  <a className="text-indigo-700 hover:underline" href={`/api/tailored/${view.id}/files/docx?t=${fileKey}`}>Download .docx</a>
-                  {view.generated.pages != null && (
-                    <button className="text-indigo-700 hover:underline" onClick={() => setShowPdf(!showPdf)}>
-                      {showPdf ? 'Hide' : 'Show'} preview
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <p className="text-slate-600">Not built yet.</p>
-            )}
-            <Button variant="primary" onClick={() => generate.mutate()} disabled={dirty || generate.isPending}>
-              {generate.isPending ? 'Building… (about 10 s)' : view.generated ? 'Rebuild .docx' : 'Generate .docx'}
-            </Button>
-            {dirty && <p className="text-xs text-slate-500">Save your changes first.</p>}
-            {view.fitNote && (
-              <p className={`text-xs ${view.fitNote.startsWith('Fitted') ? 'text-emerald-700' : 'text-amber-800'}`}>{view.fitNote}</p>
-            )}
-            <div className="border-t border-slate-100 pt-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={() => fit.mutate()} disabled={dirty || fit.isPending} variant={overTarget ? 'primary' : 'secondary'}>
-                  {fit.isPending ? 'Starting…' : 'Fit to'}
-                </Button>
-                <select
-                  className={`${inlineInput} py-1`}
-                  value={fitPages}
-                  onChange={(e) => setFitPages(Number(e.target.value))}
-                  aria-label="Pages to fit"
-                >
-                  <option value={1}>1 page</option>
-                  <option value={2}>2 pages</option>
-                  <option value={3}>3 pages</option>
-                </select>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Makes a new version, trimmed until it fits.</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card title="Ask for changes">
-          <AutoTextarea
-            minRows={2}
-            value={request}
-            placeholder='e.g. "Lead with AI enablement" or "Make the Recruiter role one bullet"'
-            onChange={(e) => setRequest(e.target.value)}
-          />
-          <div className="mt-2 flex items-center gap-2">
-            <Button onClick={() => revise.mutate()} disabled={dirty || request.trim().length < 3 || revise.isPending}>
-              {revise.isPending ? 'Starting…' : 'Revise'}
-            </Button>
-            <span className="text-xs text-slate-500">Makes a new version{view.settings.autoFit ? ', fitted to length' : ''}.</span>
-          </div>
-        </Card>
-
-        <CoverageCard view={view} dirty={dirty} />
-
-        {content.gaps.length > 0 && (
-          <Card title={`Gaps · ${content.gaps.length}`}>
-            <ul className="space-y-2 text-xs">
-              {content.gaps.map((g, i) => (
-                <li key={i}>
-                  <span className="font-medium text-slate-800">{g.item}</span>{' '}
-                  <span className="text-slate-400">({IMPORTANCE_LABELS[g.importance].toLowerCase()})</span>
-                  <div className="text-slate-600">{g.note}</div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
-        {content.notes && (
-          <Card title="Agent's notes">
-            <p className="text-xs leading-relaxed text-slate-600">{content.notes}</p>
-          </Card>
-        )}
-
-        <div className="flex flex-wrap gap-2 text-xs">
-          {view.userEdited && (
-            <LinkButton onClick={() => window.confirm('Discard your edits to this version?') && reset.mutate()}>
-              Reset to AI version
-            </LinkButton>
+            </Card>
           )}
-          <DeleteVersion id={view.id} appId={appId} onDeleted={onDeleted} />
+
+          {dirty && (
+            <div className="sticky bottom-0 z-10 flex items-center gap-2 border-t border-slate-200 bg-slate-50/95 py-3">
+              <Button variant="primary" onClick={() => save.mutate()} disabled={save.isPending}>
+                {save.isPending ? 'Saving…' : 'Save changes'}
+              </Button>
+              <Button onClick={() => setContent(structuredClone(view.content!))}>Discard</Button>
+              <span className="text-xs text-slate-500">Checks update after saving.</span>
+            </div>
+          )}
         </div>
-        {error && <ErrorText>{error.message}</ErrorText>}
-      </aside>
+
+        <aside className="order-first space-y-5 lg:order-none">
+          <Card title="Word file">
+            <div className="space-y-3 text-sm">
+              {view.generated ? (
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span>
+                      {view.generated.pages ?? '?'} page{view.generated.pages === 1 ? '' : 's'}
+                    </span>
+                    {view.generated.pages != null && view.generated.pages > view.settings.targetPages && (
+                      <Badge tone="amber">over {view.settings.targetPages}-page target</Badge>
+                    )}
+                    {view.generated.stale && <Badge tone="amber">out of date</Badge>}
+                  </div>
+                  <div className="text-xs text-slate-500">Built {formatTime(view.generated.at)}</div>
+                  <div className="flex gap-3">
+                    <a className="text-indigo-700 hover:underline" href={`/api/tailored/${view.id}/files/docx?t=${fileKey}`}>Download .docx</a>
+                    {view.generated.pages != null && (
+                      <button className="text-indigo-700 hover:underline" onClick={() => setShowPdf(!showPdf)}>
+                        {showPdf ? 'Hide' : 'Show'} preview
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-slate-600">Not built yet.</p>
+              )}
+              <Button variant="primary" onClick={() => generate.mutate()} disabled={dirty || generate.isPending}>
+                {generate.isPending ? 'Building… (about 10 s)' : view.generated ? 'Rebuild .docx' : 'Generate .docx'}
+              </Button>
+              {dirty && <p className="text-xs text-slate-500">Save your changes first.</p>}
+              {view.fitNote && (
+                <p className={`text-xs ${view.fitNote.startsWith('Fitted') ? 'text-emerald-700' : 'text-amber-800'}`}>{view.fitNote}</p>
+              )}
+              <div className="border-t border-slate-100 pt-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button onClick={() => fit.mutate()} disabled={dirty || fit.isPending} variant={overTarget ? 'primary' : 'secondary'}>
+                    {fit.isPending ? 'Starting…' : 'Fit to'}
+                  </Button>
+                  <select
+                    className={`${inlineInput} py-1`}
+                    value={fitPages}
+                    onChange={(e) => setFitPages(Number(e.target.value))}
+                    aria-label="Pages to fit"
+                  >
+                    <option value={1}>1 page</option>
+                    <option value={2}>2 pages</option>
+                    <option value={3}>3 pages</option>
+                  </select>
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Makes a new version, trimmed until it fits.</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Ask for changes">
+            <AutoTextarea
+              minRows={2}
+              value={request}
+              placeholder='e.g. "Lead with AI enablement" or "Make the Recruiter role one bullet"'
+              onChange={(e) => setRequest(e.target.value)}
+            />
+            <div className="mt-2 flex items-center gap-2">
+              <Button onClick={() => revise.mutate()} disabled={dirty || request.trim().length < 3 || revise.isPending}>
+                {revise.isPending ? 'Starting…' : 'Revise'}
+              </Button>
+              <span className="text-xs text-slate-500">Makes a new version{view.settings.autoFit ? ', fitted to length' : ''}.</span>
+            </div>
+          </Card>
+
+          <CoverageCard view={view} dirty={dirty} />
+
+          {content.gaps.length > 0 && (
+            <Card title={`Gaps · ${content.gaps.length}`}>
+              <ul className="space-y-2 text-xs">
+                {content.gaps.map((g, i) => (
+                  <li key={i}>
+                    <span className="font-medium text-slate-800">{g.item}</span>{' '}
+                    <span className="text-slate-400">({IMPORTANCE_LABELS[g.importance].toLowerCase()})</span>
+                    <div className="text-slate-600">{g.note}</div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {content.notes && (
+            <Card title="Agent's notes">
+              <p className="text-xs leading-relaxed text-slate-600">{content.notes}</p>
+            </Card>
+          )}
+
+          <div className="flex flex-wrap gap-2 text-xs">
+            {view.userEdited && (
+              <LinkButton onClick={() => window.confirm('Discard your edits to this version?') && reset.mutate()}>
+                Reset to AI version
+              </LinkButton>
+            )}
+            <DeleteVersion id={view.id} appId={appId} onDeleted={onDeleted} />
+          </div>
+          {error && <ErrorText>{error.message}</ErrorText>}
+        </aside>
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { runChecks, type Checks } from './checks.ts';
 import { normalizeHeading } from './content.ts';
 import { DEFAULT_DATE_FORMAT, formatDateRange } from './dates.ts';
 import { listPositions, NotFoundError } from './positions.ts';
+import { cancelReview } from './reviews.ts';
 import { loadProfileContent } from './profile.ts';
 import { droppedSkillsNote, limitSkills } from './skills.ts';
 import {
@@ -532,5 +533,6 @@ export function tailoredFile(id: number, kind: 'docx' | 'pdf'): { path: string; 
 export function deleteTailored(id: number): void {
   const row = getRow(id);
   if (row.status === 'tailoring' && row.run_id != null) runner.cancel(row.run_id);
+  cancelReview(id);
   db.prepare('DELETE FROM tailored_resume WHERE id = ?').run(id);
 }

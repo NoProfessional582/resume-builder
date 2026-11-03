@@ -91,3 +91,57 @@ export interface TailoredSummary {
   generatedAt: number | null;
   pages: number | null;
 }
+
+// Mirrors server/src/agent/tasks/reviewResume.ts and server/src/resume/reviews.ts.
+
+export type ReviewCategory =
+  | 'required_qualifications'
+  | 'preferred_qualifications'
+  | 'relevant_experience'
+  | 'impact_and_results'
+  | 'seniority_and_scope'
+  | 'keywords_and_ats'
+  | 'clarity_and_presentation';
+
+export const REVIEW_CATEGORY_LABELS: Record<ReviewCategory, string> = {
+  required_qualifications: 'Required qualifications',
+  preferred_qualifications: 'Preferred qualifications',
+  relevant_experience: 'Relevant experience',
+  impact_and_results: 'Impact and results',
+  seniority_and_scope: 'Seniority and scope',
+  keywords_and_ats: 'Keywords (ATS)',
+  clarity_and_presentation: 'Clarity and presentation',
+};
+
+export type Recommendation = 'advance' | 'phone_screen' | 'hold' | 'reject';
+
+export interface ResumeReview {
+  overallScore: number;
+  recommendation: Recommendation;
+  headline: string;
+  recruiterTake: string;
+  hiringManagerTake: string;
+  categories: { category: ReviewCategory; score: number; comment: string }[];
+  strengths: { point: string; evidence: string; matches: string }[];
+  deficiencies: { point: string; severity: 'high' | 'medium' | 'low'; whyItMatters: string; fix: string }[];
+  missingQualifications: {
+    requirement: string;
+    importance: 'required' | 'preferred';
+    status: 'missing' | 'unclear' | 'partial';
+    note: string;
+  }[];
+  interviewProbes: string[];
+}
+
+export interface ReviewView {
+  tailoredId: number;
+  status: 'reviewing' | 'ready' | 'failed';
+  runId: number | null;
+  progress: string | null;
+  error: string | null;
+  review: ResumeReview | null;
+  postingSource: 'live' | 'saved' | null;
+  postingNote: string | null;
+  stale: boolean;
+  updatedAt: number;
+}

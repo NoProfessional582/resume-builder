@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { createReadStream } from 'node:fs';
 import { z } from 'zod';
 import { backupPath, createBackup, listBackups } from '../backup.ts';
-import { getCodexStatus } from '../agent/codexCli.ts';
+import { getCodexStatus, listCodexModels } from '../agent/codexCli.ts';
 import { getRun, getRunEvents, isFinal, listRuns, runner, type RunStreamEvent } from '../agent/runner.ts';
 import { pingTask } from '../agent/tasks/ping.ts';
 import { getSettings, updateSettings } from '../settings.ts';
@@ -18,6 +18,7 @@ export async function apiRoutes(app: FastifyInstance): Promise<void> {
 
   // Codex
   app.get('/codex/status', async () => getCodexStatus(getSettings().codexPath));
+  app.get('/codex/models', async () => listCodexModels(getSettings().codexPath));
   app.post('/codex/test', async () => ({ runId: runner.enqueue(pingTask, {}) }));
 
   // Backups

@@ -6,6 +6,7 @@ import { runner } from './agent/runner.ts';
 import { config } from './config.ts';
 import { autoBackup } from './backup.ts';
 import { migrate } from './db.ts';
+import { recoverReviews } from './resume/reviews.ts';
 import { recoverTailoringJobs } from './resume/tailoring.ts';
 import { apiRoutes } from './routes/api.ts';
 import { applicationRoutes } from './routes/applications.ts';
@@ -17,6 +18,7 @@ import { templateRoutes } from './routes/template.ts';
 migrate();
 runner.recoverInterrupted();
 recoverTailoringJobs();
+recoverReviews();
 autoBackup();
 
 // 'warn' keeps per-request logs out of data/logs; errors still get logged.

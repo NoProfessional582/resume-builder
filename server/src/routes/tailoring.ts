@@ -14,6 +14,7 @@ import {
   startTailoring,
   tailoredFile,
 } from '../resume/tailoring.ts';
+import { getReview, startReview } from '../resume/reviews.ts';
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -45,6 +46,10 @@ export async function tailoringRoutes(app: FastifyInstance): Promise<void> {
     const { targetPages } = z.object({ targetPages: z.number().int().min(1).max(3).optional() }).parse(req.body ?? {});
     return reply.code(201).send(fitTailored(id, targetPages));
   });
+
+  // Recruiter / hiring-manager scoring of a version against its posting (null until scored).
+  app.get('/tailored/:id/review', async (req) => getReview(idParams.parse(req.params).id));
+  app.post('/tailored/:id/review', async (req, reply) => reply.code(202).send(startReview(idParams.parse(req.params).id)));
 
   app.delete('/tailored/:id', async (req, reply) => {
     deleteTailored(idParams.parse(req.params).id);
