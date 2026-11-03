@@ -9,6 +9,8 @@ import { displayRange } from '../lib/dates';
 import { describeEvent, formatTime } from '../lib/format';
 import {
   DEFAULT_SETTINGS,
+  MAX_SKILL_CHARS,
+  MAX_SKILLS,
   type CheckWarning,
   type TailoredBullet,
   type TailoredContent,
@@ -348,7 +350,7 @@ function Editor({
               />
             </div>
           ))}
-          <p className="mt-1 text-xs text-slate-400">One per line. Long names may wrap inside the template's skills table.</p>
+          <SkillLimits skills={content.skills} />
         </Card>
 
         {content.positions.map((p, pi) => (
@@ -572,6 +574,26 @@ function CoverageCard({ view, dirty }: { view: TailoredView; dirty: boolean }) {
         )}
       </div>
     </Card>
+  );
+}
+
+/** Live count against the skills table's 9 cells and 26-character width. */
+function SkillLimits({ skills }: { skills: TailoredContent['skills'] }) {
+  const all = skills.flatMap((g) => g.items).map((s) => s.trim()).filter(Boolean);
+  const long = all.filter((s) => s.length > MAX_SKILL_CHARS);
+  const over = all.length > MAX_SKILLS;
+  return (
+    <div className="mt-1 space-y-0.5 text-xs">
+      <p className={over ? 'text-amber-800' : 'text-slate-400'}>
+        {all.length}/{MAX_SKILLS} skills, up to {MAX_SKILL_CHARS} characters each. One per line.
+        {over && ` Only the first ${MAX_SKILLS} are printed.`}
+      </p>
+      {long.map((s) => (
+        <p key={s} className="text-amber-800">
+          ⚠ "{s}" is {s.length} characters and will wrap in its cell.
+        </p>
+      ))}
+    </div>
   );
 }
 

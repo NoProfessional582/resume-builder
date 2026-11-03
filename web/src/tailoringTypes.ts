@@ -19,6 +19,10 @@ export const DEFAULT_SETTINGS: TailorSettings = {
   autoFit: true,
 };
 
+/** The template's skills table is 3 × 3; longer names wrap. Mirrors server/src/resume/skills.ts. */
+export const MAX_SKILLS = 9;
+export const MAX_SKILL_CHARS = 26;
+
 export interface TailoredBullet {
   text: string;
   sourceStoryIds: number[];

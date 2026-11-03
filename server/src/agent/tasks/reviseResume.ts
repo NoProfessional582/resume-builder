@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_SKILL_CHARS, MAX_SKILLS } from '../../resume/skills.ts';
 import type { TailoredContent, TailorSettings } from '../../resume/tailored.ts';
 import { styleGuide } from '../styleGuide.ts';
 import type { TaskDef } from '../task.ts';
@@ -69,8 +70,8 @@ preference:
    third line wastes most of that line.
 2. Remove role overviews from the oldest or least relevant positions.
 3. Remove the least relevant bullets, starting with older and less relevant positions.
-4. Shorten the summary or drop a few of the least relevant skills.
-Keep every position. Keep bullets that carry required job keywords where possible. Never add facts.`;
+4. Shorten the summary.
+Leave the skills as they are: they fill a fixed table, so cutting them saves no space. Keep every position. Keep bullets that carry required job keywords where possible. Never add facts.`;
 
 export const reviseResumeTask: TaskDef<ReviseInput, ReviseOutput> = {
   name: 'revise_resume',
@@ -111,7 +112,8 @@ Role overviews: ${input.settings.includeDescriptions ? 'keep one per position un
 ## What to return
 The whole résumé after the change, in the same shape:
 - summary: one paragraph.
-- skillGroups: the skills section.
+- skillGroups: the skills section: at most ${MAX_SKILLS} skills, each at most ${MAX_SKILL_CHARS} characters including
+  spaces (they fill a 3 × 3 table; longer ones are dropped).
 - positions: one entry for every position (P ids), in the same order, with description (or null)
   and bullets. Each bullet lists sourceStoryIds (numbers after "S", only from that position) and the
   job keywords it uses (exact terms from the keyword list). Keep unchanged bullets exactly as they are.

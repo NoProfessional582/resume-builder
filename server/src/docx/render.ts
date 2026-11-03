@@ -1,6 +1,7 @@
 import type { Document, Element } from '@xmldom/xmldom';
 import { normalizeHeading, type ResumeContent } from '../resume/content.ts';
 import { formatDateRange } from '../resume/dates.ts';
+import { MAX_SKILLS } from '../resume/skills.ts';
 import type { TemplateLayout, TemplateSection } from './layout.ts';
 import { bodyBlocks, child, children, descendants, openDocx, saveDocx, W_NS } from './ooxml.ts';
 import { normalizeWithMap, paragraphRuns } from './paragraph.ts';
@@ -92,7 +93,8 @@ function itemsFor(section: TemplateSection, content: ResumeContent, layout: Temp
 
     case 'skills':
       if (has('skills_table')) {
-        const all = content.skills.flatMap((g) => g.items);
+        // The table is 3 × 3; more skills would add rows.
+        const all = content.skills.flatMap((g) => g.items).slice(0, MAX_SKILLS);
         if (all.length) items.push({ role: 'skills_table', items: all });
       } else if (has('skill_line')) {
         for (const g of content.skills) {

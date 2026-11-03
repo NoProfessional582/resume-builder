@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { CertificationItem, EducationItem, EntrySection, SkillGroup } from '../../resume/content.ts';
+import { MAX_SKILL_CHARS, MAX_SKILLS } from '../../resume/skills.ts';
 import type { TailorSettings } from '../../resume/tailored.ts';
 import { styleGuide } from '../styleGuide.ts';
 import type { TaskDef } from '../task.ts';
@@ -24,8 +25,6 @@ export interface TailorInput {
     entries: EntrySection[];
   };
   settings: TailorSettings;
-  /** How many skills the template's skills section holds now. */
-  skillCount: number;
 }
 
 const output = z.object({
@@ -145,9 +144,12 @@ ${s.instructions ? `- The user's instructions for this résumé: ${s.instruction
 
 ## What to return
 - summary: the professional summary, one paragraph, aligned to this role, per the style guide.
-- skillGroups: the skills section, most relevant first, about ${input.skillCount} skills in total (what the
-  template holds now). Use only skills from the profile's skills list or clearly demonstrated in its
-  stories; prefer the posting's wording when it truthfully names the same skill. Use a single group
+- skillGroups: the skills section, most relevant first: exactly ${MAX_SKILLS} skills in total (fewer only if
+  the profile can't truthfully support ${MAX_SKILLS}). They fill a 3 × 3 table, so each skill must be at most
+  ${MAX_SKILL_CHARS} characters including spaces; shorten a long name (e.g. "Stakeholder Communication"
+  rather than "Cross-Functional Stakeholder Communication") or pick another skill. Longer ones are
+  dropped. Use only skills from the profile's skills list or clearly demonstrated in its stories;
+  prefer the posting's wording when it truthfully names the same skill and fits. Use a single group
   with category null unless the profile's skills use categories.
 - positions: one entry for every position above (P ids), in the same order.
   - positionId: the number after "P".

@@ -14,6 +14,7 @@ import { normalizeHeading } from './content.ts';
 import { DEFAULT_DATE_FORMAT, formatDateRange } from './dates.ts';
 import { listPositions, NotFoundError } from './positions.ts';
 import { loadProfileContent } from './profile.ts';
+import { droppedSkillsNote, limitSkills } from './skills.ts';
 import {
   tailorSettingsSchema,
   tailoredContentSchema,
@@ -129,21 +130,17 @@ const cleanBullets = (bullets: ReviseOutput['positions'][number]['bullets']) =>
     .map((b) => ({ text: b.text.trim(), sourceStoryIds: [...new Set(b.sourceStoryIds)], keywords: b.keywords }))
     .filter((b) => b.text);
 
-const cleanSkills = (groups: ReviseOutput['skillGroups']) =>
-  groups
-    .map((g) => ({ category: g.category?.trim() || null, items: g.items.map((s) => s.trim()).filter(Boolean) }))
-    .filter((g) => g.items.length);
-
 /** Turns the tailoring agent's answer into full résumé content, using the profile for facts. */
 function buildContent(out: TailorOutput, settings: TailorSettings): TailoredContent {
   const profile = loadProfileContent();
   const byId = new Map(out.positions.map((p) => [p.positionId, p]));
   const pick = <T>(items: T[], indexes: number[]) =>
     [...new Set(indexes)].filter((i) => i >= 0 && i < items.length).map((i) => items[i]);
+  const { skills, dropped } = limitSkills(out.skillGroups);
 
   return {
     summary: out.summary.trim() ? [out.summary.trim()] : profile.summary,
-    skills: cleanSkills(out.skillGroups),
+    skills,
     // Every position stays (no unexplained gaps); titles, employers and dates come from the profile.
     positions: listPositions().map((p) => {
       const t = byId.get(p.id);
@@ -167,17 +164,18 @@ function buildContent(out: TailorOutput, settings: TailorSettings): TailoredCont
       })
       .filter((e) => e.items.length),
     gaps: out.gaps,
-    notes: out.notes,
+    notes: out.notes + droppedSkillsNote(dropped),
   };
 }
 
 /** Applies a revision to existing content. Positions' facts and the other sections stay as they were. */
 function applyRevision(current: TailoredContent, out: ReviseOutput, settings: TailorSettings): TailoredContent {
   const byId = new Map(out.positions.map((p) => [p.positionId, p]));
+  const { skills, dropped } = limitSkills(out.skillGroups);
   return {
     ...current,
     summary: out.summary.trim() ? [out.summary.trim()] : current.summary,
-    skills: cleanSkills(out.skillGroups).length ? cleanSkills(out.skillGroups) : current.skills,
+    skills: skills.length ? skills : current.skills,
     positions: current.positions.map((p) => {
       const r = byId.get(p.positionId);
       if (!r) return p;
@@ -188,7 +186,7 @@ function applyRevision(current: TailoredContent, out: ReviseOutput, settings: Ta
       };
     }),
     gaps: out.gaps,
-    notes: out.notes,
+    notes: out.notes + droppedSkillsNote(dropped),
   };
 }
 
@@ -276,7 +274,6 @@ function tailorInput(applicationId: number, settings: TailorSettings): TailorInp
       entries: profile.entries,
     },
     settings,
-    skillCount: Math.max(6, profile.skills.reduce((n, g) => n + g.items.length, 0)),
   };
 }
 
