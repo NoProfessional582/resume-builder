@@ -347,7 +347,9 @@ function LayoutRow({
 }) {
   const queryClient = useQueryClient();
   const [pattern, setPattern] = useState(block.pattern ?? '');
-  useEffect(() => setPattern(block.pattern ?? ''), [block.pattern]);
+  useEffect(() => {
+    setPattern(block.pattern ?? '');
+  }, [block.pattern]);
 
   const update = useMutation({
     mutationFn: (change: { role?: Role; pattern?: string | null }) => api.updateBlock(importId, block.index, change),

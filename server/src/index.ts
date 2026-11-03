@@ -4,12 +4,20 @@ import { existsSync, rmSync, writeFileSync } from 'node:fs';
 import { ZodError } from 'zod';
 import { runner } from './agent/runner.ts';
 import { config } from './config.ts';
+import { autoBackup } from './backup.ts';
 import { migrate } from './db.ts';
+import { recoverTailoringJobs } from './resume/tailoring.ts';
 import { apiRoutes } from './routes/api.ts';
+import { applicationRoutes } from './routes/applications.ts';
+import { profileRoutes } from './routes/profile.ts';
+import { refineRoutes } from './routes/refine.ts';
+import { tailoringRoutes } from './routes/tailoring.ts';
 import { templateRoutes } from './routes/template.ts';
 
 migrate();
 runner.recoverInterrupted();
+recoverTailoringJobs();
+autoBackup();
 
 // 'warn' keeps per-request logs out of data/logs; errors still get logged.
 const app = Fastify({ logger: { level: 'warn' } });
@@ -25,6 +33,10 @@ app.setErrorHandler((err, _req, reply) => {
 
 await app.register(apiRoutes, { prefix: '/api' });
 await app.register(templateRoutes, { prefix: '/api' });
+await app.register(profileRoutes, { prefix: '/api' });
+await app.register(refineRoutes, { prefix: '/api' });
+await app.register(applicationRoutes, { prefix: '/api' });
+await app.register(tailoringRoutes, { prefix: '/api' });
 
 // Serve the built web app (npm run build). In development Vite serves it instead.
 const hasWebBuild = existsSync(config.webDist);

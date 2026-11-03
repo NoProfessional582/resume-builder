@@ -28,8 +28,13 @@ const PACKAGE_ENTRY = ['@openai', 'codex', 'bin', 'codex.js'];
 
 /** Finds the Codex CLI: explicit setting, RB_CODEX_PATH, then the global npm install. */
 export function resolveCodex(configuredPath: string): CodexCommand {
+  // A path set in Settings must work; silently falling back would hide the mistake.
+  if (configuredPath) {
+    const command = toCommand(configuredPath);
+    if (!command) throw new Error(`Codex not found at "${configuredPath}" (Settings → Codex path).`);
+    return command;
+  }
   const candidates: string[] = [];
-  if (configuredPath) candidates.push(configuredPath);
   if (process.env.RB_CODEX_PATH) candidates.push(process.env.RB_CODEX_PATH);
   if (process.env.APPDATA) candidates.push(resolve(process.env.APPDATA, 'npm', 'node_modules', ...PACKAGE_ENTRY));
   const root = npmGlobalRoot();

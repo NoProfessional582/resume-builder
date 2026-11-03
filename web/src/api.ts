@@ -1,4 +1,15 @@
+import type {
+  Position,
+  PositionInput,
+  ProfileSection,
+  ProfileSectionKind,
+  RefineSession,
+  Story,
+  StoryVersion,
+} from './profileTypes';
+import type { Application, ApplicationInput, ApplicationSummary, JobAnalysis } from './applicationTypes';
 import type { ImportView, PreviewResult, Role, TemplateSummary } from './resumeTypes';
+import type { TailoredContent, TailoredSummary, TailoredView, TailorSettings } from './tailoringTypes';
 import type { CodexStatus, Run, RunDetail, Settings } from './types';
 
 export class ApiError extends Error {
@@ -15,7 +26,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  const data = await res.json().catch(() => null);
+  const data = res.status === 204 ? null : await res.json().catch(() => null);
   if (!res.ok) {
     const issues = data?.issues?.map((i: { path: string[]; message: string }) => `${i.path.join('.')}: ${i.message}`);
     throw new ApiError(res.status, issues?.join('; ') || data?.error || `${res.status} ${res.statusText}`);
@@ -52,5 +63,58 @@ export const api = {
   saveImport: (id: number, replaceContent: boolean) =>
     request<{ templateId: number }>('POST', `/imports/${id}/save`, { replaceContent }),
   getTemplate: () => request<TemplateSummary>('GET', '/template'),
+
+  listPositions: () => request<Position[]>('GET', '/positions'),
+  createPosition: (input: PositionInput) => request<Position>('POST', '/positions', input),
+  updatePosition: (id: number, input: PositionInput) => request<Position>('PUT', `/positions/${id}`, input),
+  deletePosition: (id: number) => request<void>('DELETE', `/positions/${id}`),
+  createStory: (positionId: number, text: string) => request<Story>('POST', `/positions/${positionId}/stories`, { text }),
+  reorderStories: (positionId: number, ids: number[]) =>
+    request<{ ok: true }>('PUT', `/positions/${positionId}/stories/order`, { ids }),
+  updateStory: (id: number, change: { text?: string; lessons?: string | null; positionId?: number }) =>
+    request<Story>('PUT', `/stories/${id}`, change),
+  deleteStory: (id: number) => request<void>('DELETE', `/stories/${id}`),
+  storyVersions: (id: number) => request<StoryVersion[]>('GET', `/stories/${id}/versions`),
+  restoreVersion: (id: number, versionId: number) => request<Story>('POST', `/stories/${id}/restore`, { versionId }),
+
+  startRefine: (storyId: number) => request<RefineSession>('POST', `/stories/${storyId}/refine`, {}),
+  getRefine: (id: number) => request<RefineSession>('GET', `/refine/${id}`),
+  sendRefine: (id: number, content: string, draft: string, lessons: string) =>
+    request<RefineSession>('POST', `/refine/${id}/messages`, { content, draft, lessons }),
+  retryRefine: (id: number) => request<RefineSession>('POST', `/refine/${id}/retry`, {}),
+  acceptRefine: (id: number, draft: string, lessons: string) =>
+    request<RefineSession>('POST', `/refine/${id}/accept`, { draft, lessons }),
+  discardRefine: (id: number) => request<RefineSession>('POST', `/refine/${id}/discard`, {}),
+
+  listApplications: () => request<ApplicationSummary[]>('GET', '/applications'),
+  createApplication: (input: ApplicationInput) => request<Application>('POST', '/applications', input),
+  getApplication: (id: number) => request<Application>('GET', `/applications/${id}`),
+  updateApplication: (id: number, input: ApplicationInput) => request<Application>('PUT', `/applications/${id}`, input),
+  deleteApplication: (id: number) => request<void>('DELETE', `/applications/${id}`),
+  analyzeApplication: (id: number) => request<Application>('POST', `/applications/${id}/analyze`, {}),
+  saveAnalysis: (id: number, analysis: JobAnalysis) => request<Application>('PUT', `/applications/${id}/analysis`, analysis),
+  resetAnalysis: (id: number) => request<Application>('POST', `/applications/${id}/analysis/reset`, {}),
+
+  listTailored: (applicationId: number) => request<TailoredSummary[]>('GET', `/applications/${applicationId}/tailored`),
+  startTailoring: (applicationId: number, settings: TailorSettings) =>
+    request<TailoredView>('POST', `/applications/${applicationId}/tailored`, settings),
+  getTailored: (id: number) => request<TailoredView>('GET', `/tailored/${id}`),
+  saveTailored: (id: number, content: TailoredContent) => request<TailoredView>('PUT', `/tailored/${id}/content`, content),
+  resetTailored: (id: number) => request<TailoredView>('POST', `/tailored/${id}/reset`, {}),
+  retryTailored: (id: number) => request<TailoredView>('POST', `/tailored/${id}/retry`, {}),
+  generateTailored: (id: number) => request<TailoredView>('POST', `/tailored/${id}/generate`, {}),
+  deleteTailored: (id: number) => request<void>('DELETE', `/tailored/${id}`),
+  reviseTailored: (id: number, instruction: string) => request<TailoredView>('POST', `/tailored/${id}/revise`, { instruction }),
+  fitTailored: (id: number, targetPages: number) => request<TailoredView>('POST', `/tailored/${id}/fit`, { targetPages }),
+
+  listBackups: () => request<{ name: string; size: number; createdAt: number }[]>('GET', '/backups'),
+  createBackup: () => request<{ name: string; size: number; createdAt: number }>('POST', '/backups', {}),
+
+  listSections: () => request<ProfileSection[]>('GET', '/sections'),
+  createSection: (kind: ProfileSectionKind, heading: string | null) =>
+    request<ProfileSection>('POST', '/sections', { kind, heading }),
+  saveSection: (id: number, heading: string | null, items: unknown[]) =>
+    request<ProfileSection>('PUT', `/sections/${id}`, { heading, items }),
+  deleteSection: (id: number) => request<void>('DELETE', `/sections/${id}`),
   previewProfile: () => request<{ pages: number }>('POST', '/template/preview', {}),
 };

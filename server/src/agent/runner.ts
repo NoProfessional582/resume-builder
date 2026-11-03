@@ -362,6 +362,10 @@ class Runner {
         }
         if (code !== 0) {
           const detail = agentError ?? lastLines(stderr) ?? `exit code ${code}`;
+          // Expired sign-ins are the most common cause; say how to fix it, and don't retry.
+          if (/401|unauthori[sz]ed|not logged in|log ?in|sign ?in|token (has )?expired|refresh token/i.test(detail)) {
+            return done({ ok: false, fatal: true, error: `Codex failed: ${detail}\nCodex may need you to sign in again: run "codex login" in a terminal.` });
+          }
           return done({ ok: false, error: `Codex failed: ${detail}` });
         }
         if (!existsSync(resultFile)) return done({ ok: false, error: 'Codex finished without a final message.' });

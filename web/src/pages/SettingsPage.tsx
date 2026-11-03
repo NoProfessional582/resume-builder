@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { api } from '../api';
 import { Button, Card, ErrorText, Field, inputClass, PageHeader, StatusBadge } from '../components/ui';
 import { useRunStream } from '../hooks/useRunStream';
-import { describeEvent, formatDuration } from '../lib/format';
+import { describeEvent, formatDuration, formatTime } from '../lib/format';
 import type { Settings } from '../types';
 
 const EXPECTED_PROFILE = 'resume-builder-v1';
@@ -16,6 +16,7 @@ export function SettingsPage() {
       <div className="space-y-6">
         <CodexStatusCard />
         <AgentSettingsCard />
+        <BackupsCard />
       </div>
     </>
   );
@@ -116,6 +117,49 @@ function TestRunProgress({ runId }: { runId: number }) {
       )}
       {run?.error && <div className="mt-3"><ErrorText>{run.error}</ErrorText></div>}
     </div>
+  );
+}
+
+function BackupsCard() {
+  const queryClient = useQueryClient();
+  const backups = useQuery({ queryKey: ['backups'], queryFn: api.listBackups });
+  const create = useMutation({
+    mutationFn: api.createBackup,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['backups'] }),
+  });
+  const list = backups.data ?? [];
+  return (
+    <Card
+      title="Backups"
+      actions={
+        <Button onClick={() => create.mutate()} disabled={create.isPending}>
+          {create.isPending ? 'Backing up…' : 'Back up now'}
+        </Button>
+      }
+    >
+      <p className="mb-3 text-sm text-slate-600">
+        Each backup is one .zip with your database, template and style guide, plus restore steps inside. One is made
+        automatically when the app starts if the last is over a day old; the newest 20 are kept in{' '}
+        <code className="rounded bg-slate-100 px-1 text-xs">data/backups</code>.
+      </p>
+      {backups.error && <ErrorText>{backups.error.message}</ErrorText>}
+      {create.error && <ErrorText>{create.error.message}</ErrorText>}
+      {list.length === 0 ? (
+        <p className="text-sm text-slate-400 italic">No backups yet.</p>
+      ) : (
+        <ul className="divide-y divide-slate-100 text-sm">
+          {list.slice(0, 8).map((b) => (
+            <li key={b.name} className="flex items-center justify-between py-1.5">
+              <span>{formatTime(b.createdAt)}</span>
+              <span className="text-xs text-slate-500">{(b.size / 1024).toFixed(0)} KB</span>
+              <a className="text-xs text-indigo-700 hover:underline" href={`/api/backups/${b.name}`}>
+                Download
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
   );
 }
 

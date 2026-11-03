@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ButtonHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
 import type { RunStatus } from '../types';
 
 export function PageHeader({ title, description, actions }: { title: string; description?: ReactNode; actions?: ReactNode }) {
@@ -79,6 +79,40 @@ export const inputClass =
 
 export function ErrorText({ children }: { children: ReactNode }) {
   return <p className="rounded-md bg-red-50 px-3 py-2 text-sm whitespace-pre-wrap text-red-800">{children}</p>;
+}
+
+/** A textarea that grows with its content. */
+export function AutoTextarea({ className = '', minRows = 3, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { minRows?: number }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + 2}px`;
+  }, [props.value]);
+  return <textarea ref={ref} rows={minRows} className={`${inputClass} resize-y leading-relaxed ${className}`} {...props} />;
+}
+
+/** Small text-style button for secondary actions inside cards. */
+export function LinkButton({ className = '', danger = false, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean }) {
+  return (
+    <button
+      className={`rounded px-1.5 py-0.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 ${
+        danger ? 'text-red-700 hover:bg-red-50' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+      } ${className}`}
+      {...props}
+    />
+  );
+}
+
+export function Badge({ children, tone = 'slate' }: { children: ReactNode; tone?: 'slate' | 'green' | 'amber' | 'indigo' }) {
+  const tones = {
+    slate: 'bg-slate-100 text-slate-700',
+    green: 'bg-emerald-100 text-emerald-800',
+    amber: 'bg-amber-100 text-amber-800',
+    indigo: 'bg-indigo-100 text-indigo-800',
+  };
+  return <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${tones[tone]}`}>{children}</span>;
 }
 
 export function CodeBlock({ children }: { children: ReactNode }) {

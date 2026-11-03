@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
+import { createReadStream } from 'node:fs';
 import { z } from 'zod';
+import { backupPath, createBackup, listBackups } from '../backup.ts';
 import { getCodexStatus } from '../agent/codexCli.ts';
 import { getRun, getRunEvents, isFinal, listRuns, runner, type RunStreamEvent } from '../agent/runner.ts';
 import { pingTask } from '../agent/tasks/ping.ts';
@@ -17,6 +19,17 @@ export async function apiRoutes(app: FastifyInstance): Promise<void> {
   // Codex
   app.get('/codex/status', async () => getCodexStatus(getSettings().codexPath));
   app.post('/codex/test', async () => ({ runId: runner.enqueue(pingTask, {}) }));
+
+  // Backups
+  app.get('/backups', async () => listBackups());
+  app.post('/backups', async (_req, reply) => reply.code(201).send(createBackup()));
+  app.get('/backups/:name', async (req, reply) => {
+    const { name } = z.object({ name: z.string() }).parse(req.params);
+    const path = backupPath(name);
+    if (!path) return reply.code(404).send({ error: 'Backup not found' });
+    reply.header('Content-Disposition', `attachment; filename="${name}"`);
+    return reply.type('application/zip').send(createReadStream(path));
+  });
 
   // Agent runs
   app.get('/runs', async (req) => {

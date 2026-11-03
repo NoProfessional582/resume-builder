@@ -1,6 +1,7 @@
 import { db, transaction } from '../db.ts';
 import type { TemplateLayout } from '../docx/layout.ts';
 import { emptyContent, normalizeHeading, type ResumeContent } from './content.ts';
+import { POSITION_ORDER } from './positions.ts';
 
 export interface ProfileCounts {
   positions: number;
@@ -65,7 +66,7 @@ export function replaceProfile(content: ResumeContent, layout: TemplateLayout): 
 /** The current profile as resume content (all positions, current story text). */
 export function loadProfileContent(): ResumeContent {
   const content = emptyContent();
-  const positions = db.prepare('SELECT * FROM position ORDER BY sort_order, id').all() as {
+  const positions = db.prepare(`SELECT * FROM position ORDER BY ${POSITION_ORDER}`).all() as {
     id: number;
     organization: string;
     title: string;

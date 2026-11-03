@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useLocation } from 'react-router';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const NAV = [
   {
@@ -20,6 +21,7 @@ const NAV = [
 ];
 
 export function Layout() {
+  const location = useLocation();
   return (
     <div className="flex min-h-screen">
       <aside className="w-56 shrink-0 border-r border-slate-200 bg-white">
@@ -47,7 +49,9 @@ export function Layout() {
       </aside>
       <main className="min-w-0 flex-1 px-8 py-8">
         <div className="mx-auto max-w-5xl">
-          <Outlet />
+          <ErrorBoundary resetKey={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>

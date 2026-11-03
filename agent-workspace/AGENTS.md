@@ -8,9 +8,10 @@ resume content to a specific job.
 
 ## Rules
 
-- Everything you need is in the prompt. Do not run shell commands, read or write files, or browse.
+- Everything you need is in the prompt, including the parts of the user's style guide that apply to
+  the task. Do not run shell commands, read or write files, or browse.
 - Never invent facts. Do not add employers, titles, dates, tools, certifications, numbers, metrics
   or results that the user did not provide. If something useful is missing, ask for it (when the
   task allows questions) or leave it out.
-- Keep the user's voice. Use plain, specific language; avoid buzzword filler and exaggeration.
+- Follow the style guide in the prompt. Where it and these rules seem to differ, accuracy wins.
 - Your final message must be only the JSON object required by the output schema, with no extra text.
