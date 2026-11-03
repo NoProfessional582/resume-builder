@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { getRun, isFinal, runner } from '../agent/runner.ts';
 import { analyzeJobTask, jobAnalysisEditSchema, type JobAnalysis } from '../agent/tasks/analyzeJob.ts';
+import { parseJobPostingTask } from '../agent/tasks/parseJobPosting.ts';
+import { fetchPostingPage, type PageContent } from '../web/fetchPage.ts';
 import { db } from '../db.ts';
 import { NotFoundError } from './positions.ts';
 
@@ -11,7 +13,16 @@ const optionalText = z
   .optional()
   .transform((v) => (v ? v : null));
 
+const optionalUrl = z
+  .string()
+  .trim()
+  .nullable()
+  .optional()
+  .transform((v) => (v ? v : null))
+  .refine((v) => v === null || /^https?:\/\/\S+$/i.test(v), { message: 'The posting link must start with http:// or https://' });
+
 export const applicationInput = z.object({
+  url: optionalUrl,
   company: z.string().trim().min(1, 'Company is required'),
   roleTitle: z.string().trim().min(1, 'Role title is required'),
   jobDescription: z.string().trim().min(50, 'Paste the job description (at least a few sentences)').max(100_000),
@@ -25,6 +36,7 @@ type AnalysisStatus = 'analyzing' | 'ready' | 'failed';
 
 interface ApplicationRow {
   id: number;
+  url: string | null;
   company: string;
   role_title: string;
   job_description: string;
@@ -48,6 +60,8 @@ interface AnalysisRow {
 
 export interface Application {
   id: number;
+  /** Link to the original posting. */
+  url: string | null;
   company: string;
   roleTitle: string;
   jobDescription: string;
@@ -68,6 +82,7 @@ export interface Application {
 
 export interface ApplicationSummary {
   id: number;
+  url: string | null;
   company: string;
   roleTitle: string;
   createdAt: number;
@@ -116,6 +131,7 @@ export function getApplication(id: number): Application {
   const analysis = settle(id);
   return {
     id: a.id,
+    url: a.url,
     company: a.company,
     roleTitle: a.role_title,
     jobDescription: a.job_description,
@@ -144,6 +160,7 @@ export function listApplications(): ApplicationSummary[] {
     const keywords = a.analysis?.data?.keywords ?? [];
     return {
       id: a.id,
+      url: a.url,
       company: a.company,
       roleTitle: a.roleTitle,
       createdAt: a.createdAt,
@@ -152,6 +169,41 @@ export function listApplications(): ApplicationSummary[] {
       requiredCount: keywords.filter((k) => k.importance === 'required').length,
     };
   });
+}
+
+export interface ParsedPosting {
+  /** Form-ready fields; the user reviews them before saving. */
+  fields: ApplicationInput;
+  /** Anything the agent noticed (e.g. the description looks cut off). */
+  problem: string | null;
+  source: PageContent['source'];
+  runId: number;
+}
+
+/** Downloads a posting page and has the agent pull out the application fields. */
+export async function parseJobPostingUrl(url: string): Promise<ParsedPosting> {
+  const page = await fetchPostingPage(url);
+  const { runId, output } = await runner.run(parseJobPostingTask, { url: page.url, pageText: page.text });
+  if (!output.found) {
+    throw Object.assign(new Error(output.problem ?? "That page doesn't seem to contain a job posting."), {
+      statusCode: 422,
+    });
+  }
+  const clean = (s: string | null) => (s?.trim() ? s.trim() : null);
+  return {
+    fields: {
+      url: page.url,
+      company: output.company.trim(),
+      roleTitle: output.roleTitle.trim(),
+      jobDescription: output.jobDescription.trim(),
+      requiredExperience: clean(output.requiredExperience),
+      preferredExperience: clean(output.preferredExperience),
+      notes: output.details.length ? output.details.map((d) => d.trim()).filter(Boolean).join('\n') : null,
+    },
+    problem: output.problem,
+    source: page.source,
+    runId,
+  };
 }
 
 /** Starts (or restarts) the analysis. Replaces any previous analysis, including user edits. */
@@ -180,10 +232,11 @@ export function createApplication(input: ApplicationInput): Application {
   const now = Date.now();
   const { lastInsertRowid } = db
     .prepare(
-      `INSERT INTO application (company, role_title, job_description, required_experience, preferred_experience, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO application (url, company, role_title, job_description, required_experience, preferred_experience, notes, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
+      input.url,
       input.company,
       input.roleTitle,
       input.jobDescription,
@@ -200,9 +253,10 @@ export function createApplication(input: ApplicationInput): Application {
 export function updateApplication(id: number, input: ApplicationInput): Application {
   getRow(id);
   db.prepare(
-    `UPDATE application SET company = ?, role_title = ?, job_description = ?, required_experience = ?,
+    `UPDATE application SET url = ?, company = ?, role_title = ?, job_description = ?, required_experience = ?,
        preferred_experience = ?, notes = ?, updated_at = ? WHERE id = ?`,
   ).run(
+    input.url,
     input.company,
     input.roleTitle,
     input.jobDescription,

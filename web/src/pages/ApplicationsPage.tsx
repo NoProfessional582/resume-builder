@@ -43,7 +43,23 @@ export function ApplicationsPage() {
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="min-w-0">
                 <div className="font-semibold text-slate-900">{a.roleTitle}</div>
-                <div className="text-sm text-slate-600">{a.company}</div>
+                <div className="text-sm text-slate-600">
+                  {a.company}
+                  {a.url && (
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      className="ml-2 text-xs text-indigo-700 hover:underline"
+                      onClick={(e) => {
+                        // The whole card is a link; open the posting instead.
+                        e.preventDefault();
+                        window.open(a.url!, '_blank', 'noopener');
+                      }}
+                    >
+                      Posting ↗
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 {a.analysisStatus === 'analyzing' && <Badge tone="indigo">Analyzing…</Badge>}
@@ -66,6 +82,8 @@ export function ApplicationsPage() {
 export function NewApplicationPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [link, setLink] = useState('');
+  const [filled, setFilled] = useState<{ fields: ApplicationInput; problem: string | null; key: number } | null>(null);
   const create = useMutation({
     mutationFn: api.createApplication,
     onSuccess: (a) => {
@@ -73,26 +91,71 @@ export function NewApplicationPage() {
       navigate(`/applications/${a.id}`);
     },
   });
+  const parse = useMutation({
+    mutationFn: () => api.parsePostingUrl(link),
+    onSuccess: (r) => setFilled({ fields: r.fields, problem: r.problem, key: Date.now() }),
+  });
+
   return (
     <>
       <div className="mb-2 text-sm">
         <Link to="/applications" className="text-indigo-700 hover:underline">← Applications</Link>
       </div>
-      <PageHeader title="New application" description="Paste the posting. Analysis starts as soon as you save (usually 20–60 seconds)." />
-      <Card>
-        <ApplicationForm
-          submitLabel="Save and analyze"
-          pending={create.isPending}
-          error={create.error}
-          onSubmit={(input) => create.mutate(input)}
-          onCancel={() => navigate('/applications')}
-        />
-      </Card>
+      <PageHeader title="New application" description="Start from the posting's link, or paste it. Analysis starts as soon as you save." />
+      <div className="space-y-6">
+        <Card title="Start from a link">
+          <form
+            className="flex flex-wrap items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (link.trim()) parse.mutate();
+            }}
+          >
+            <input
+              className={`${inputClass} min-w-0 flex-1`}
+              type="url"
+              placeholder="https://… (the job posting's address)"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              aria-label="Job posting link"
+            />
+            <Button variant="primary" type="submit" disabled={!link.trim() || parse.isPending}>
+              {parse.isPending ? 'Reading the posting… (about 30 s)' : 'Fill from link'}
+            </Button>
+          </form>
+          <p className="mt-2 text-xs text-slate-500">
+            The app downloads the page and Codex fills in the form below. Check it before saving; nothing is saved until you do.
+          </p>
+          {parse.error && (
+            <div className="mt-3">
+              <ErrorText>{parse.error.message}</ErrorText>
+            </div>
+          )}
+          {filled && (
+            <p className="mt-3 text-sm text-emerald-700">
+              ✓ Filled in from the posting. Review the fields below.
+              {filled.problem && <span className="block text-amber-800">Note: {filled.problem}</span>}
+            </p>
+          )}
+        </Card>
+        <Card>
+          <ApplicationForm
+            key={filled?.key ?? 0}
+            initial={filled?.fields}
+            submitLabel="Save and analyze"
+            pending={create.isPending}
+            error={create.error}
+            onSubmit={(input) => create.mutate(input)}
+            onCancel={() => navigate('/applications')}
+          />
+        </Card>
+      </div>
     </>
   );
 }
 
 const emptyInput: ApplicationInput = {
+  url: null,
   company: '',
   roleTitle: '',
   jobDescription: '',
@@ -116,7 +179,7 @@ export function ApplicationForm({
   onSubmit: (input: ApplicationInput) => void;
   onCancel: () => void;
 }) {
-  const [form, setForm] = useState<ApplicationInput>(initial);
+  const [form, setForm] = useState<ApplicationInput>({ ...emptyInput, ...initial });
   const set = (patch: Partial<ApplicationInput>) => setForm({ ...form, ...patch });
 
   return (
@@ -127,8 +190,19 @@ export function ApplicationForm({
         onSubmit(form);
       }}
     >
+      <div className="sm:col-span-2">
+        <Field label="Posting link" hint="Optional. Saved with the application so you can get back to the original posting.">
+          <input
+            className={inputClass}
+            type="url"
+            placeholder="https://…"
+            value={form.url ?? ''}
+            onChange={(e) => set({ url: e.target.value || null })}
+          />
+        </Field>
+      </div>
       <Field label="Company">
-        <input className={inputClass} value={form.company} onChange={(e) => set({ company: e.target.value })} required autoFocus />
+        <input className={inputClass} value={form.company} onChange={(e) => set({ company: e.target.value })} required />
       </Field>
       <Field label="Role title">
         <input className={inputClass} value={form.roleTitle} onChange={(e) => set({ roleTitle: e.target.value })} required />

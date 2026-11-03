@@ -7,7 +7,7 @@ import type {
   Story,
   StoryVersion,
 } from './profileTypes';
-import type { Application, ApplicationInput, ApplicationSummary, JobAnalysis } from './applicationTypes';
+import type { Application, ApplicationInput, ApplicationSummary, JobAnalysis, ParsedPosting } from './applicationTypes';
 import type { ImportView, PreviewResult, Role, TemplateSummary } from './resumeTypes';
 import type { TailoredContent, TailoredSummary, TailoredView, TailorSettings } from './tailoringTypes';
 import type { CodexStatus, Run, RunDetail, Settings } from './types';
@@ -88,6 +88,7 @@ export const api = {
 
   listApplications: () => request<ApplicationSummary[]>('GET', '/applications'),
   createApplication: (input: ApplicationInput) => request<Application>('POST', '/applications', input),
+  parsePostingUrl: (url: string) => request<ParsedPosting>('POST', '/applications/parse-url', { url }),
   getApplication: (id: number) => request<Application>('GET', `/applications/${id}`),
   updateApplication: (id: number, input: ApplicationInput) => request<Application>('PUT', `/applications/${id}`, input),
   deleteApplication: (id: number) => request<void>('DELETE', `/applications/${id}`),

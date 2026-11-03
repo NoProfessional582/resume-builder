@@ -43,7 +43,19 @@ export function ApplicationPage() {
       <div className="mb-2 text-sm">
         <Link to="/applications" className="text-indigo-700 hover:underline">← Applications</Link>
       </div>
-      <PageHeader title={a.roleTitle} description={`${a.company} · added ${formatTime(a.createdAt)}`} />
+      <PageHeader
+        title={a.roleTitle}
+        description={
+          <>
+            {a.company} · added {formatTime(a.createdAt)}
+            {a.url && (
+              <a href={a.url} target="_blank" rel="noopener noreferrer" className="ml-3 text-indigo-700 hover:underline">
+                Open posting ↗
+              </a>
+            )}
+          </>
+        }
+      />
       <div className="mb-5 flex gap-1 border-b border-slate-200">
         {(
           [
@@ -451,6 +463,14 @@ function PostingTab({ app }: { app: Application }) {
         }
       >
         <div className="space-y-5">
+          {app.url && (
+            <section>
+              <h3 className="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">Posting link</h3>
+              <a href={app.url} target="_blank" rel="noopener noreferrer" className="text-sm break-all text-indigo-700 hover:underline">
+                {app.url}
+              </a>
+            </section>
+          )}
           {section('Job description', app.jobDescription)}
           {section('Required experience', app.requiredExperience)}
           {section('Preferred experience', app.preferredExperience)}

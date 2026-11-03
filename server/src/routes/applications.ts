@@ -7,6 +7,7 @@ import {
   deleteApplication,
   getApplication,
   listApplications,
+  parseJobPostingUrl,
   resetAnalysis,
   saveAnalysis,
   updateApplication,
@@ -19,6 +20,12 @@ export async function applicationRoutes(app: FastifyInstance): Promise<void> {
 
   // Creating an application starts its analysis right away.
   app.post('/applications', async (req, reply) => reply.code(201).send(createApplication(applicationInput.parse(req.body))));
+
+  // Reads a posting from its link and returns form fields to review (nothing is saved).
+  app.post('/applications/parse-url', async (req) => {
+    const { url } = z.object({ url: z.string().trim().min(1, 'Paste the posting link') }).parse(req.body);
+    return parseJobPostingUrl(url);
+  });
 
   app.get('/applications/:id', async (req) => getApplication(idParams.parse(req.params).id));
 

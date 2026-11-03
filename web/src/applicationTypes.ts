@@ -55,6 +55,8 @@ export interface JobAnalysis {
 }
 
 export interface ApplicationInput {
+  /** Link to the original posting. */
+  url: string | null;
   company: string;
   roleTitle: string;
   jobDescription: string;
@@ -77,8 +79,16 @@ export interface Application extends ApplicationInput {
   } | null;
 }
 
+export interface ParsedPosting {
+  fields: ApplicationInput;
+  problem: string | null;
+  source: 'download' | 'browser';
+  runId: number;
+}
+
 export interface ApplicationSummary {
   id: number;
+  url: string | null;
   company: string;
   roleTitle: string;
   createdAt: number;
