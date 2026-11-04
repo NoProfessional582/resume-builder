@@ -28,6 +28,7 @@ export const jobAnalysisSchema = z.object({
   ),
   responsibilities: z.array(z.string()),
   notes: z.array(z.string()),
+  expectedQuestions: z.array(z.object({question:z.string(), competency:z.string(), rationale:z.string(), evidence:z.string()})),
 });
 export type JobAnalysis = z.infer<typeof jobAnalysisSchema>;
 
@@ -36,6 +37,7 @@ const cleanList = (items: string[]) => items.map((s) => s.trim()).filter(Boolean
 /** The same shape, validated and tidied when the user saves edits. */
 export const jobAnalysisEditSchema = jobAnalysisSchema
   .extend({
+    expectedQuestions: jobAnalysisSchema.shape.expectedQuestions.default([]),
     keywords: z.array(
       jobAnalysisSchema.shape.keywords.element.extend({ term: z.string().trim().min(1, 'A keyword is empty') }),
     ),
@@ -105,5 +107,6 @@ ${job.requiredExperience ? `\nRequired experience (as listed in the posting):\n$
 - notes: practical facts the posting states: years of experience, degree, clearance, location or
   remote policy, travel, salary range. Only list facts that are stated; never note what is missing.
   Empty if none.
+- expectedQuestions: 6–10 plausible behavioral interview questions inferred from this posting, not claims about what the employer will actually ask. Each has question, competency, rationale (why preparation matters), and evidence (a short exact posting quote). Cover the most important required experiences and responsibilities. Questions should invite concrete examples and reflection/lessons.
 `,
 };

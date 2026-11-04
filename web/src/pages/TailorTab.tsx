@@ -129,7 +129,7 @@ function SettingsCard({
         support, and lists any gaps. Usually 1–2 minutes.
       </p>
       <form
-        className="grid gap-4 sm:grid-cols-3"
+        className="grid gap-4 @min-[40rem]:grid-cols-3"
         onSubmit={(e) => {
           e.preventDefault();
           start.mutate(settings);
@@ -148,11 +148,11 @@ function SettingsCard({
         <Field label="Most bullets per position">
           <input type="number" min={1} max={10} className={inputClass} value={settings.maxBullets} onChange={(e) => set({ maxBullets: Number(e.target.value) })} />
         </Field>
-        <label className="flex items-center gap-2 text-sm sm:col-span-3">
+        <label className="flex items-center gap-2 text-sm @min-[40rem]:col-span-3">
           <input type="checkbox" checked={settings.includeDescriptions} onChange={(e) => set({ includeDescriptions: e.target.checked })} />
           Write a role overview under each position
         </label>
-        <label className="flex items-start gap-2 text-sm sm:col-span-3">
+        <label className="flex items-start gap-2 text-sm @min-[40rem]:col-span-3">
           <input type="checkbox" className="mt-1" checked={settings.autoFit} onChange={(e) => set({ autoFit: e.target.checked })} />
           <span>
             Fit to the target length automatically
@@ -161,18 +161,18 @@ function SettingsCard({
             </span>
           </span>
         </label>
-        <div className="sm:col-span-3">
+        <div className="@min-[40rem]:col-span-3">
           <Field label="Instructions for this résumé" hint='Optional, e.g. "Emphasize customer adoption and AI enablement."'>
             <AutoTextarea minRows={2} value={settings.instructions} onChange={(e) => set({ instructions: e.target.value })} />
           </Field>
         </div>
-        <div className="flex items-center gap-2 sm:col-span-3">
+        <div className="flex items-center gap-2 @min-[40rem]:col-span-3">
           <Button variant="primary" type="submit" disabled={start.isPending}>
             {start.isPending ? 'Starting…' : 'Tailor résumé'}
           </Button>
           {onCancel && <Button type="button" onClick={onCancel}>Cancel</Button>}
         </div>
-        {start.error && <div className="sm:col-span-3"><ErrorText>{start.error.message}</ErrorText></div>}
+        {start.error && <div className="@min-[40rem]:col-span-3"><ErrorText>{start.error.message}</ErrorText></div>}
       </form>
     </Card>
   );
@@ -314,7 +314,7 @@ function Editor({
   return (
     <div className="space-y-5">
       <ReviewCard versionId={view.id} dirty={dirty} />
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_19rem]">
+      <div className="grid items-start gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">
           {view.generated && showPdf && (
             <Card title="Preview" actions={<LinkButton onClick={() => setShowPdf(false)}>Hide</LinkButton>}>

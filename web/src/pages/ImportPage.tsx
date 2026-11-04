@@ -381,7 +381,7 @@ function LayoutRow({
 
   return (
     <div
-      className={`grid gap-3 px-5 py-3 md:grid-cols-[minmax(0,1fr)_minmax(16rem,1fr)] ${
+      className={`grid gap-3 px-5 py-3 @min-[48rem]:grid-cols-[minmax(0,1fr)_minmax(16rem,1fr)] ${
         block.status === 'mismatch' ? 'bg-red-50' : ''
       }`}
     >
@@ -469,7 +469,7 @@ function PreviewTab({ id }: { id: number }) {
               {r.diff.added.map((l, i) => <div key={`a${i}`} className="text-emerald-800">+ {l}</div>)}
             </div>
           )}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 @min-[64rem]:grid-cols-2">
             {(['original', 'rendered'] as const).map((name) => (
               <div key={name}>
                 <div className="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">

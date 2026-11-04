@@ -1,3 +1,4 @@
+import { changeStage, lifecycle } from './workspace.ts';
 import { z } from 'zod';
 import { getRun, isFinal, runner } from '../agent/runner.ts';
 import { analyzeJobTask, jobAnalysisEditSchema, type JobAnalysis } from '../agent/tasks/analyzeJob.ts';
@@ -159,6 +160,8 @@ export function listApplications(): ApplicationSummary[] {
     const a = getApplication(id);
     const keywords = a.analysis?.data?.keywords ?? [];
     return {
+      ...lifecycle(a.id),
+      notes: a.notes,
       id: a.id,
       url: a.url,
       company: a.company,
@@ -246,6 +249,7 @@ export function createApplication(input: ApplicationInput): Application {
       now,
       now,
     );
+  changeStage(Number(lastInsertRowid), {stage:'interested', effectiveDate: new Date().toLocaleDateString('en-CA')});
   return analyze(Number(lastInsertRowid));
 }
 

@@ -1,102 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApplicationWorkspaceList } from './ApplicationWorkspaceList';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { api } from '../api';
 import type { ApplicationInput } from '../applicationTypes';
-import { AutoTextarea, Badge, Button, Card, ErrorText, Field, inputClass, LinkButton, PageHeader } from '../components/ui';
-import { formatTime } from '../lib/format';
+import { AutoTextarea, Button, Card, ErrorText, Field, inputClass, PageHeader } from '../components/ui';
 
-export function ApplicationsPage() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const remove = useMutation({
-    mutationFn: api.deleteApplication,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['applications'] }),
-  });
-  const list = useQuery({
-    queryKey: ['applications'],
-    queryFn: api.listApplications,
-    refetchInterval: (q) => (q.state.data?.some((a) => a.analysisStatus === 'analyzing') ? 3000 : false),
-  });
-
-  return (
-    <>
-      <PageHeader
-        title="Applications"
-        description="One per job you apply to. Each posting is analyzed for the keywords and experience to tailor your résumé to."
-        actions={
-          <Button variant="primary" onClick={() => navigate('/applications/new')}>
-            New application
-          </Button>
-        }
-      />
-      {list.error && <ErrorText>{list.error.message}</ErrorText>}
-      {remove.error && <ErrorText>{remove.error.message}</ErrorText>}
-      {list.data && list.data.length === 0 && (
-        <Card>
-          <p className="text-sm text-slate-600">
-            No applications yet. <Link to="/applications/new" className="text-indigo-700 hover:underline">Add your first one</Link>.
-          </p>
-        </Card>
-      )}
-      <div className="space-y-3">
-        {list.data?.map((a) => (
-          <Link
-            key={a.id}
-            to={`/applications/${a.id}`}
-            className="block rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm transition-colors hover:border-indigo-300"
-          >
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <div className="min-w-0">
-                <div className="font-semibold text-slate-900">{a.roleTitle}</div>
-                <div className="text-sm text-slate-600">
-                  {a.company}
-                  {a.url && (
-                    <span
-                      role="link"
-                      tabIndex={0}
-                      className="ml-2 text-xs text-indigo-700 hover:underline"
-                      onClick={(e) => {
-                        // The whole card is a link; open the posting instead.
-                        e.preventDefault();
-                        window.open(a.url!, '_blank', 'noopener');
-                      }}
-                    >
-                      Posting ↗
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                {a.analysisStatus === 'analyzing' && <Badge tone="indigo">Analyzing…</Badge>}
-                {a.analysisStatus === 'failed' && <Badge tone="amber">Analysis failed</Badge>}
-                {a.analysisStatus === 'ready' && (
-                  <span>
-                    {a.keywordCount} keywords · {a.requiredCount} required
-                  </span>
-                )}
-                <span>· {formatTime(a.createdAt)}</span>
-                <LinkButton
-                  danger
-                  disabled={remove.isPending}
-                  onClick={(e) => {
-                    // The whole card is a link; don't open it.
-                    e.preventDefault();
-                    if (window.confirm(`Delete the ${a.roleTitle} application at ${a.company}, with its analysis and tailored résumés?`)) {
-                      remove.mutate(a.id);
-                    }
-                  }}
-                >
-                  Delete
-                </LinkButton>
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </>
-  );
-}
+export function ApplicationsPage() { return <ApplicationWorkspaceList/>; }
 
 export function NewApplicationPage() {
   const navigate = useNavigate();
@@ -203,13 +113,13 @@ export function ApplicationForm({
 
   return (
     <form
-      className="grid gap-4 sm:grid-cols-2"
+      className="grid gap-4 @min-[40rem]:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(form);
       }}
     >
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <Field label="Posting link" hint="Optional. Saved with the application so you can get back to the original posting.">
           <input
             className={inputClass}
@@ -226,7 +136,7 @@ export function ApplicationForm({
       <Field label="Role title">
         <input className={inputClass} value={form.roleTitle} onChange={(e) => set({ roleTitle: e.target.value })} required />
       </Field>
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <Field label="Job description" hint="Paste the whole posting. If it lists qualifications, you can leave them in here or use the boxes below.">
           <AutoTextarea minRows={10} value={form.jobDescription} onChange={(e) => set({ jobDescription: e.target.value })} required />
         </Field>
@@ -237,18 +147,18 @@ export function ApplicationForm({
       <Field label="Preferred experience" hint="Optional: preferred or bonus qualifications.">
         <AutoTextarea minRows={4} value={form.preferredExperience ?? ''} onChange={(e) => set({ preferredExperience: e.target.value })} />
       </Field>
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <Field label="Notes" hint="Optional and private: referral, salary, location, anything you want to remember. Not treated as part of the posting.">
           <AutoTextarea minRows={2} value={form.notes ?? ''} onChange={(e) => set({ notes: e.target.value })} />
         </Field>
       </div>
-      <div className="flex items-center gap-2 sm:col-span-2">
+      <div className="flex items-center gap-2 @min-[40rem]:col-span-2">
         <Button variant="primary" type="submit" disabled={pending}>
           {pending ? 'Saving…' : submitLabel}
         </Button>
         <Button type="button" onClick={onCancel}>Cancel</Button>
       </div>
-      {error && <div className="sm:col-span-2"><ErrorText>{error.message}</ErrorText></div>}
+      {error && <div className="@min-[40rem]:col-span-2"><ErrorText>{error.message}</ErrorText></div>}
     </form>
   );
 }

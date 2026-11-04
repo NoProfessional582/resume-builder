@@ -37,7 +37,7 @@ export function RunDetailPage() {
       />
       <div className="space-y-6">
         <Card title="Details">
-          <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-sm sm:grid-cols-[9rem_1fr_9rem_1fr]">
+          <dl className="grid grid-cols-[9rem_1fr] gap-x-4 gap-y-2 text-sm @min-[40rem]:grid-cols-[9rem_1fr_9rem_1fr]">
             <dt className="text-slate-500">Started</dt>
             <dd>{formatTime(r.startedAt)}</dd>
             <dt className="text-slate-500">Duration</dt>
@@ -51,7 +51,7 @@ export function RunDetailPage() {
             <dt className="text-slate-500">Tokens</dt>
             <dd>{formatTokens(r.usage)}</dd>
             <dt className="text-slate-500">Session id</dt>
-            <dd className="font-mono text-xs break-all sm:col-span-3">{r.threadId ?? '—'}</dd>
+            <dd className="font-mono text-xs break-all @min-[40rem]:col-span-3">{r.threadId ?? '—'}</dd>
           </dl>
         </Card>
 

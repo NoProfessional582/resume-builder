@@ -2,6 +2,10 @@ import { z } from 'zod';
 import { db } from './db.ts';
 
 export const settingsSchema = z.object({
+  displayTimezone: z.string().refine(value => {
+    try { new Intl.DateTimeFormat('en', { timeZone: value }); return true; }
+    catch { return false; }
+  }, 'Enter a valid IANA timezone').default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
   /** Path to codex.js or codex.exe. Empty = find the global npm install automatically. */
   codexPath: z.string().trim().default(''),
   /** Model passed with -m. Empty = Codex default. */

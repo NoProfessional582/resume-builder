@@ -54,7 +54,7 @@ function NewSection({ onDone }: { onDone: () => void }) {
   });
   return (
     <Card title="New section">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 @min-[40rem]:grid-cols-2">
         <Field label="Type">
           <select className={inputClass} value={kind} onChange={(e) => setKind(e.target.value as ProfileSectionKind)}>
             {(Object.keys(KIND_LABELS) as ProfileSectionKind[]).map((k) => (
@@ -299,13 +299,13 @@ function EducationEditor({ items, onChange }: { items: EducationItem[]; onChange
       blank={() => ({ degree: '', school: null, location: null, dates: null, details: null })}
       addLabel="Add education"
       renderItem={(e, update) => (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 @min-[40rem]:grid-cols-2">
           <input className={inputClass} placeholder="Degree or program" value={e.degree} onChange={(ev) => update({ degree: ev.target.value })} />
           <input className={inputClass} placeholder="School" value={e.school ?? ''} onChange={(ev) => update({ school: ev.target.value })} />
           <input className={inputClass} placeholder="Location (optional)" value={e.location ?? ''} onChange={(ev) => update({ location: ev.target.value })} />
           <input className={inputClass} placeholder="Dates (optional)" value={e.dates ?? ''} onChange={(ev) => update({ dates: ev.target.value })} />
           <input
-            className={`${inputClass} sm:col-span-2`}
+            className={`${inputClass} @min-[40rem]:col-span-2`}
             placeholder="Details, e.g. summa cum laude (optional)"
             value={e.details ?? ''}
             onChange={(ev) => update({ details: ev.target.value })}
@@ -324,9 +324,9 @@ function CertificationsEditor({ items, onChange }: { items: CertificationItem[];
       blank={() => ({ name: '', issuer: null, date: null })}
       addLabel="Add certification"
       renderItem={(c, update) => (
-        <div className="grid gap-2 sm:grid-cols-3">
-          <input className={`${inputClass} sm:col-span-3`} placeholder="Name" value={c.name} onChange={(e) => update({ name: e.target.value })} />
-          <input className={`${inputClass} sm:col-span-2`} placeholder="Issuer (optional)" value={c.issuer ?? ''} onChange={(e) => update({ issuer: e.target.value })} />
+        <div className="grid gap-2 @min-[40rem]:grid-cols-3">
+          <input className={`${inputClass} @min-[40rem]:col-span-3`} placeholder="Name" value={c.name} onChange={(e) => update({ name: e.target.value })} />
+          <input className={`${inputClass} @min-[40rem]:col-span-2`} placeholder="Issuer (optional)" value={c.issuer ?? ''} onChange={(e) => update({ issuer: e.target.value })} />
           <input className={inputClass} placeholder="Date (optional)" value={c.date ?? ''} onChange={(e) => update({ date: e.target.value })} />
         </div>
       )}

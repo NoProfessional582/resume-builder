@@ -48,6 +48,7 @@ export type RunStreamEvent =
   | { kind: 'codex'; attempt: number; event: CodexEvent };
 
 export interface Settings {
+  displayTimezone: string;
   codexPath: string;
   model: string;
   reasoningEffort: '' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';

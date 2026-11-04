@@ -52,6 +52,7 @@ export interface JobAnalysis {
   keyExperiences: KeyExperience[];
   responsibilities: string[];
   notes: string[];
+  expectedQuestions?: {question:string;competency:string;rationale:string;evidence:string}[];
 }
 
 export interface ApplicationInput {
@@ -87,6 +88,11 @@ export interface ParsedPosting {
 }
 
 export interface ApplicationSummary {
+  stage: string | null;
+  offerOutcome: string | null;
+  closureReason: string | null;
+  lastActivityDate: string | null;
+  notes: string | null;
   id: number;
   url: string | null;
   company: string;

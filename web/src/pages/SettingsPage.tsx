@@ -6,20 +6,45 @@ import { Button, Card, ErrorText, Field, inputClass, PageHeader, StatusBadge } f
 import { useRunStream } from '../hooks/useRunStream';
 import { describeEvent, formatDuration, formatTime } from '../lib/format';
 import type { Settings } from '../types';
+import { FollowUpSettingsCard } from '../components/FollowUpSettingsCard';
 
 const EXPECTED_PROFILE = 'resume-builder-v1';
 
 export function SettingsPage() {
   return (
     <>
-      <PageHeader title="Settings" description="How the app runs the Codex CLI for AI tasks." />
+      <PageHeader title="Settings" description="Application preferences and settings for AI tasks." />
       <div className="space-y-6">
+        <DisplaySettingsCard />
+        <FollowUpSettingsCard />
         <CodexStatusCard />
         <AgentSettingsCard />
         <BackupsCard />
       </div>
     </>
   );
+}
+
+function DisplaySettingsCard() {
+  const qc = useQueryClient();
+  const settings = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
+  const [timezone, setTimezone] = useState<string | null>(null);
+  const save = useMutation({
+    mutationFn: () => api.saveSettings({ displayTimezone: timezone ?? settings.data!.displayTimezone }),
+    onSuccess: next => { qc.setQueryData(['settings'], next); setTimezone(null); },
+  });
+  return <Card title="Display Settings">
+    {settings.error && <ErrorText>{settings.error.message}</ErrorText>}
+    {settings.isPending && <p>Loading settings…</p>}
+    {settings.data && <form className="space-y-3" onSubmit={e => { e.preventDefault(); save.mutate(); }}>
+      <Field label="Display Time Zone" hint="Used across the agenda and application events. Enter an IANA name, such as America/Los_Angeles. Date-only items stay on their selected date.">
+        <input className={inputClass} required value={timezone ?? settings.data.displayTimezone} onChange={e => setTimezone(e.target.value)}/>
+      </Field>
+      {save.error && <ErrorText>{save.error.message}</ErrorText>}
+      <Button variant="primary" type="submit" disabled={save.isPending || timezone === null}>Save Display Settings</Button>
+      {save.isSuccess && timezone === null && <p role="status" className="text-sm text-green-700">Saved</p>}
+    </form>}
+  </Card>;
 }
 
 function CodexStatusCard() {
@@ -174,7 +199,7 @@ function AgentSettingsCard() {
   }, [settings.data, draft]);
 
   const save = useMutation({
-    mutationFn: api.saveSettings,
+    mutationFn: ({ displayTimezone: _displayTimezone, ...agentSettings }: Settings) => api.saveSettings(agentSettings),
     onSuccess: (next) => {
       queryClient.setQueryData(['settings'], next);
       queryClient.invalidateQueries({ queryKey: ['codex-status'] });
@@ -190,12 +215,12 @@ function AgentSettingsCard() {
     setDraft({ ...draft, ...patch });
     setSaved(false);
   };
-  const dirty = JSON.stringify(draft) !== JSON.stringify(settings.data);
+  const dirty = JSON.stringify({ ...draft, displayTimezone: settings.data?.displayTimezone }) !== JSON.stringify(settings.data);
 
   return (
     <Card title="Agent settings">
       <form
-        className="grid gap-5 sm:grid-cols-2"
+        className="grid gap-5 @min-[40rem]:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
           save.mutate(draft);
@@ -229,7 +254,7 @@ function AgentSettingsCard() {
         <Field label="Codex path" hint="Leave blank to find it automatically (global npm install, then PATH).">
           <input className={inputClass} value={draft.codexPath} placeholder="Auto-detect" onChange={(e) => update({ codexPath: e.target.value })} />
         </Field>
-        <label className="flex items-start gap-3 sm:col-span-2">
+        <label className="flex items-start gap-3 @min-[40rem]:col-span-2">
           <input
             type="checkbox"
             className="mt-1"
@@ -243,13 +268,13 @@ function AgentSettingsCard() {
             </span>
           </span>
         </label>
-        <div className="flex items-center gap-3 sm:col-span-2">
+        <div className="flex items-center gap-3 @min-[40rem]:col-span-2">
           <Button variant="primary" type="submit" disabled={!dirty || save.isPending}>
             {save.isPending ? 'Saving…' : 'Save settings'}
           </Button>
           {saved && !dirty && <span className="text-sm text-emerald-700">Saved</span>}
         </div>
-        {save.error && <div className="sm:col-span-2"><ErrorText>{save.error.message}</ErrorText></div>}
+        {save.error && <div className="@min-[40rem]:col-span-2"><ErrorText>{save.error.message}</ErrorText></div>}
       </form>
     </Card>
   );

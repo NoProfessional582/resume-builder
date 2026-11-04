@@ -10,6 +10,10 @@
     "web"
   ],
   "scripts": {
+    "test:phase1": "node server/tests/workspace.test.ts",
+    "test:phase2a": "node server/tests/events.test.ts",
+    "test:phase2b": "node server/tests/attention.test.ts",
+    "test:phase3": "node server/tests/preparation.test.ts",
     "dev": "concurrently -n server,web -c blue,green \"npm:dev -w server\" \"npm:dev -w web\"",
     "build": "npm run build -w web",
     "start": "node server/src/index.ts",

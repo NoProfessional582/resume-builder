@@ -5,6 +5,15 @@
   --font-mono: 'Cascadia Mono', Consolas, ui-monospace, monospace;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
+  min-width: 1200px;
   @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+#root {
+  min-width: 1200px;
 }

@@ -156,7 +156,7 @@ function PositionForm({ position, organizations, onDone }: { position?: Position
 
   return (
     <form
-      className="grid gap-4 sm:grid-cols-2"
+      className="grid gap-4 @min-[40rem]:grid-cols-2"
       onSubmit={(e) => {
         e.preventDefault();
         save.mutate({ ...form, end: current ? null : form.end });
@@ -180,7 +180,7 @@ function PositionForm({ position, organizations, onDone }: { position?: Position
       <Field label="Location" hint="Optional, e.g. Seattle, WA">
         <input className={inputClass} value={form.location ?? ''} onChange={(e) => set({ location: e.target.value })} />
       </Field>
-      <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:max-w-md">
+      <div className="grid grid-cols-2 gap-3 @min-[40rem]:col-span-2 sm:max-w-md">
         <Field label="Start">
           <input
             type="month"
@@ -203,18 +203,18 @@ function PositionForm({ position, organizations, onDone }: { position?: Position
           I currently work here
         </label>
       </div>
-      <div className="sm:col-span-2">
+      <div className="@min-[40rem]:col-span-2">
         <Field label="Description" hint="A short narrative of the role. It prints under the position line.">
           <AutoTextarea value={form.description ?? ''} onChange={(e) => set({ description: e.target.value })} />
         </Field>
       </div>
-      <div className="flex items-center gap-2 sm:col-span-2">
+      <div className="flex items-center gap-2 @min-[40rem]:col-span-2">
         <Button variant="primary" type="submit" disabled={save.isPending}>
           {save.isPending ? 'Saving…' : position ? 'Save' : 'Add position'}
         </Button>
         <Button type="button" onClick={onDone}>Cancel</Button>
       </div>
-      {save.error && <div className="sm:col-span-2"><ErrorText>{save.error.message}</ErrorText></div>}
+      {save.error && <div className="@min-[40rem]:col-span-2"><ErrorText>{save.error.message}</ErrorText></div>}
     </form>
   );
 }

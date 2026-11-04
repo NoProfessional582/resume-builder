@@ -9,6 +9,8 @@ import { RunsPage } from './pages/RunsPage';
 import { SectionsPage } from './pages/SectionsPage';
 import { WorkHistoryPage } from './pages/WorkHistoryPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AgendaPage } from './pages/AgendaPage';
+import { AttentionPage } from './pages/AttentionPage';
 
 export function App() {
   return (
@@ -21,6 +23,8 @@ export function App() {
           <Route path="history" element={<WorkHistoryPage />} />
           <Route path="sections" element={<SectionsPage />} />
           <Route path="applications" element={<ApplicationsPage />} />
+          <Route path="agenda" element={<AgendaPage />} />
+          <Route path="attention" element={<AttentionPage />} />
           <Route path="applications/new" element={<NewApplicationPage />} />
           <Route path="applications/:id" element={<ApplicationPage />} />
           <Route path="runs" element={<RunsPage />} />

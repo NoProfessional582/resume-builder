@@ -6,9 +6,58 @@ own résumé's formatting.
 
 Everything runs on your own PC: your data stays in a local database. The AI work goes through the
 [Codex CLI](https://github.com/openai/codex), signed in with your ChatGPT account. See
-[PLAN.md](PLAN.md) for the full design.
+[PLAN.md](PLAN.md) for the original design and implementation history. See
+[MASTER_PLAN.md](MASTER_PLAN.md) for the phased expansion into application tracking, contacts,
+scheduling, follow-up alerts, and interview preparation.
+
+Phase 1 adds application stages, dated activity and history, reusable contacts, and a List/Board
+switch with saved search, filters, company grouping, and sorting. Open an application's **Overview**
+to manage its stage, activity, and contacts; Analysis, Posting, and Résumé remain available.
+Existing applications show **Set stage** until you classify them. See [PHASE_1_PLAN.md](PHASE_1_PLAN.md)
+for implementation decisions. Restart the app after updating to apply the new database migration.
+In Board view, drag a card to another stage to update it. Offer and Cancelled/declined drops ask
+for details before saving. Use the **List** and **Board** buttons to switch views. Open an application
+to change its stage with keyboard or touch controls, or to open the original posting.
 
 ## What you need
+
+Phase 3 adds **Interview prep** inside each application. Choose a source story (direct job-keyword
+matches explain the suggested order), enter a question, and start preparation. Draft with AI or
+edit Situation, Task, Action, Result, speaking notes, and practice notes yourself. **Save draft**
+persists edits; sending a conversation turn also saves them. **Accept answer** keeps the answer
+separate from work history; reopen it whenever you want to make changes. Save before navigating away.
+Failed or cancelled turns preserve saved edits and the conversation for retry.
+
+Source-story and analysis changes show a review warning. Deleted stories leave the preparation's
+original snapshot available. **Review source update** lets you explicitly edit the complete factual
+story and save a new work-history version; concurrent source edits are rejected. Deleting an
+application deletes its preparation sessions, while shared stories remain. All preparation data is
+included in database backups. Restart the app after updating to apply migration 013.
+See [Phase 3 plan](docs/plans/PHASE_3_PLAN.md) for verification details.
+
+The revised workflow starts with **Expected interview questions**. New job analyses generate
+posting-based questions automatically. For existing applications, click **Generate questions &
+story matches** to get questions and agent-selected experiences without replacing your analysis.
+Each match explains its relevance and what to develop; additional useful stories and evidence gaps
+appear separately. **Prepare this story** opens a manual or conversational **S.T.A.R.L** editor,
+including Lessons learned. The agent asks specific questions about missing facts and proposes
+expanded work-history text and lessons. **Review & save to work history** shows the current original
+and proposed update before saving both, with conflict detection. Save your draft before reviewing
+source updates. Refresh the plan after source edits to update matches. Migration 014 adds plan
+snapshots and source-update history; existing answers are preserved.
+
+**Prepare this story** opens an agent-led modal. The coach automatically evaluates the existing
+experience against the selected question and asks focused questions before building the answer.
+Reply conversationally to develop the S.T.A.R.L story. **Edit manually (optional)** reveals the
+secondary form. Close or press Escape to return to the page; reopening resumes saved progress
+and does not repeat the opening assessment. Review and save new facts to Work History as before.
+
+To improve the original work-history experience, use **Recommend story update** in the modal.
+A separate agent review integrates applicable confirmed details into one cohesive narrative,
+consolidating overlap and preserving useful original facts. It explains what was included or left
+out, keeps lessons separate, and leaves the original untouched until **Save recommended update**.
+You can optionally edit the recommendation. Changed source or preparation details require a fresh
+recommendation before saving. Migration 015 persists these recommendations and their source snapshots.
 
 | | Why |
 |---|---|
@@ -130,6 +179,26 @@ Layout:
 
 Environment variables: `PORT` (default 4310), `HOST` (default 127.0.0.1), `RB_DATA_DIR` (default
 `data/`), `RB_CODEX_PATH` (path to Codex, if it can't be found automatically).
+
+## Events and agenda
+
+Phase 2A adds **Agenda** under Jobs and **Events & next actions** in each application workspace.
+Set **Display Time Zone** globally in Settings. Application contacts appear above Timeline;
+use **Add Person** to open the create/link form.
+Add interviews, screenings, assessments, deadlines, follow-ups, or agreed response dates;
+use Date only for items without a meeting time. Events support linked contacts, rescheduling,
+completion, cancellation, and history. The agenda displays overdue scheduled items after downtime.
+See [PHASE_2A_PLAN.md](PHASE_2A_PLAN.md) for timezone and deletion behavior.
+Run `npm run test:phase2a` for isolated event checks.
+
+## Follow-up suggestions
+
+**Needs attention** under Jobs lists explicit due actions and applications past your follow-up
+threshold. Edit follow-up thresholds and timezone in Settings under Follow-up Rules. Each application workspace also shows
+its suggestions. Record a follow-up, snooze until a date, dismiss the current reason, or close
+the application. Snoozes and dismissals survive restart; muted items can be restored.
+See [PHASE_2B_PLAN.md](PHASE_2B_PLAN.md) for rule precedence and activity-cycle behavior.
+Run `npm run test:phase2b` for isolated checks.
 
 ## License
 

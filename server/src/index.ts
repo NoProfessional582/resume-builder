@@ -1,3 +1,7 @@
+import { workspaceRoutes } from './routes/workspace.ts';
+import { preparationRoutes } from './routes/preparation.ts';
+import { eventRoutes } from './routes/events.ts';
+import { attentionRoutes } from './routes/attention.ts';
 import fastifyStatic from '@fastify/static';
 import Fastify from 'fastify';
 import { existsSync, rmSync, writeFileSync } from 'node:fs';
@@ -38,6 +42,10 @@ await app.register(templateRoutes, { prefix: '/api' });
 await app.register(profileRoutes, { prefix: '/api' });
 await app.register(refineRoutes, { prefix: '/api' });
 await app.register(applicationRoutes, { prefix: '/api' });
+await app.register(workspaceRoutes, { prefix: '/api' });
+await app.register(preparationRoutes, { prefix: '/api' });
+await app.register(eventRoutes, { prefix: '/api' });
+await app.register(attentionRoutes, { prefix: '/api' });
 await app.register(tailoringRoutes, { prefix: '/api' });
 
 // Serve the built web app (npm run build). In development Vite serves it instead.

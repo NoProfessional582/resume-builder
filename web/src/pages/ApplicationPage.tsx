@@ -1,3 +1,5 @@
+import { WorkspaceTab } from './WorkspaceTab';
+import { PreparationTab } from './PreparationTab';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -23,11 +25,11 @@ import { describeEvent, formatTime } from '../lib/format';
 import { ApplicationForm } from './ApplicationsPage';
 import { TailorTab } from './TailorTab';
 
-type Tab = 'analysis' | 'posting' | 'resume';
+type Tab = 'overview' | 'analysis' | 'posting' | 'resume' | 'preparation';
 
 export function ApplicationPage() {
   const id = Number(useParams().id);
-  const [tab, setTab] = useState<Tab>('analysis');
+  const [tab, setTab] = useState<Tab>('overview');
   const app = useQuery({
     queryKey: ['application', id],
     queryFn: () => api.getApplication(id),
@@ -56,12 +58,14 @@ export function ApplicationPage() {
           </>
         }
       />
-      <div className="mb-5 flex gap-1 border-b border-slate-200">
+      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-slate-200">
         {(
           [
+            ['overview', 'Overview'],
             ['analysis', 'Analysis'],
             ['posting', 'Posting'],
             ['resume', 'Résumé'],
+            ['preparation', 'Interview prep'],
           ] as [Tab, string][]
         ).map(([t, label]) => (
           <button
@@ -75,9 +79,11 @@ export function ApplicationPage() {
           </button>
         ))}
       </div>
+      {tab === 'overview' && <WorkspaceTab id={id} />}
       {tab === 'analysis' && <AnalysisTab app={a} />}
       {tab === 'posting' && <PostingTab app={a} />}
       {tab === 'resume' && <TailorTab app={a} />}
+      {tab === 'preparation' && <PreparationTab id={id} />}
     </>
   );
 }
@@ -185,7 +191,7 @@ function AnalysisTab({ app }: { app: Application }) {
         </ul>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-2">
         <Card title="Responsibilities">
           <ul className="list-disc space-y-1 pl-5 text-sm">{d.responsibilities.map((r, i) => <li key={i}>{r}</li>)}</ul>
         </Card>
@@ -318,7 +324,7 @@ function AnalysisEditor({ app, data, onDone }: { app: Application; data: JobAnal
           blank={(): Keyword => ({ term: '', category: 'hard_skill', importance: 'preferred', synonyms: [], evidence: '' })}
           addLabel="Add keyword"
           renderItem={(k, update) => (
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_9.5rem]">
+            <div className="grid gap-2 @min-[40rem]:grid-cols-[minmax(0,1fr)_9rem_9.5rem]">
               <input className={inputClass} placeholder="Keyword" value={k.term} onChange={(e) => update({ term: e.target.value })} aria-label="Keyword" />
               <select className={inputClass} value={k.category} onChange={(e) => update({ category: e.target.value as KeywordCategory })} aria-label="Category">
                 {KEYWORD_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
@@ -326,7 +332,7 @@ function AnalysisEditor({ app, data, onDone }: { app: Application; data: JobAnal
               <select className={inputClass} value={k.importance} onChange={(e) => update({ importance: e.target.value as Importance })} aria-label="Importance">
                 {IMPORTANCE.map((i) => <option key={i} value={i}>{IMPORTANCE_LABELS[i]}</option>)}
               </select>
-              <div className="sm:col-span-3">
+              <div className="@min-[40rem]:col-span-3">
                 <ListTextInput
                   separator="comma"
                   value={k.synonyms}
@@ -336,7 +342,7 @@ function AnalysisEditor({ app, data, onDone }: { app: Application; data: JobAnal
                   className="text-xs"
                 />
               </div>
-              {k.evidence && <p className="text-xs text-slate-500 italic sm:col-span-3">“{k.evidence}”</p>}
+              {k.evidence && <p className="text-xs text-slate-500 italic @min-[40rem]:col-span-3">“{k.evidence}”</p>}
             </div>
           )}
         />
@@ -349,12 +355,12 @@ function AnalysisEditor({ app, data, onDone }: { app: Application; data: JobAnal
           blank={(): KeyExperience => ({ statement: '', importance: 'preferred', keywords: [] })}
           addLabel="Add key experience"
           renderItem={(e, update) => (
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem]">
+            <div className="grid gap-2 @min-[40rem]:grid-cols-[minmax(0,1fr)_10rem]">
               <AutoTextarea minRows={2} value={e.statement} onChange={(ev) => update({ statement: ev.target.value })} aria-label="Experience" />
               <select className={`${inputClass} self-start`} value={e.importance} onChange={(ev) => update({ importance: ev.target.value as Importance })} aria-label="Importance">
                 {IMPORTANCE.map((i) => <option key={i} value={i}>{IMPORTANCE_LABELS[i]}</option>)}
               </select>
-              <div className="sm:col-span-2">
+              <div className="@min-[40rem]:col-span-2">
                 <ListTextInput
                   separator="comma"
                   value={e.keywords}
@@ -369,7 +375,7 @@ function AnalysisEditor({ app, data, onDone }: { app: Application; data: JobAnal
         />
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 @min-[64rem]:grid-cols-2">
         <Card title="Responsibilities">
           <ListTextInput separator="line" minRows={6} value={d.responsibilities} onChange={(responsibilities) => set({ responsibilities })} placeholder="One per line" aria-label="Responsibilities" />
         </Card>

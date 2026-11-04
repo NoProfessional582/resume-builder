@@ -143,7 +143,7 @@ function ReviewSummary({ view, review }: { view: ReviewView; review: ResumeRevie
           <p className="text-sm font-medium text-slate-900">{review.headline}</p>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @min-[40rem]:grid-cols-2">
         <Take who="Recruiter screen" text={review.recruiterTake} />
         <Take who="Hiring manager" text={review.hiringManagerTake} />
       </div>
