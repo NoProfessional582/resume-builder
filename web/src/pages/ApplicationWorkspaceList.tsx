@@ -163,22 +163,27 @@ export function ApplicationWorkspaceList() {
       )}
       <Card>
         <div className="grid gap-3 @min-[48rem]:grid-cols-2 @min-[80rem]:grid-cols-3">
-          <Field label="Companies (select any)">
-            <select
-              multiple
-              className={inputClass}
-              value={p.companies}
-              onChange={(e) =>
-                set({
-                  companies: Array.from(e.target.selectedOptions, (o) => o.value),
-                })
-              }
-            >
+          <fieldset className="min-w-0">
+            <legend className="mb-1 text-sm font-medium text-slate-800">Companies (select any)</legend>
+            <div className="h-28 overflow-y-auto rounded-md border border-slate-300 bg-white p-1">
               {[...new Set(all.map((a) => a.company))].sort().map((c) => (
-                <option key={c}>{c}</option>
+                <label key={c} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-slate-50 focus-within:ring-2 focus-within:ring-indigo-500">
+                  <input
+                    type="checkbox"
+                    checked={p.companies.includes(c)}
+                    onChange={(e) =>
+                      set({
+                        companies: e.target.checked
+                          ? [...p.companies, c]
+                          : p.companies.filter((company) => company !== c),
+                      })
+                    }
+                  />
+                  {c}
+                </label>
               ))}
-            </select>
-          </Field>
+            </div>
+          </fieldset>
           <div>
             <label htmlFor="application-sort" className="mb-1 block text-sm font-medium text-slate-800">
               Sort by
