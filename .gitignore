@@ -6,3 +6,6 @@ web/dist/
 # Personal resume files dropped in the project root
 /*.docx
 /*.pdf
+
+# Dot-prefixed directories at any depth
+.*/
