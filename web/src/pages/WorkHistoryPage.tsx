@@ -31,6 +31,10 @@ export function WorkHistoryPage() {
           )
         }
       />
+      <div className="mb-6 rounded-lg border border-indigo-100 bg-indigo-50/50 p-4">
+        <h2 className="text-sm font-semibold text-slate-900">Build out your experience with guided questions</h2>
+        <p className="mt-1 text-sm text-slate-600">Choose Expand story on any story. The agent asks follow-up questions about your role, actions and results, then works your answers into a draft. You can choose a focus, edit the draft and accept it when ready. Closing saves the conversation for later; earlier story versions stay in History.</p>
+      </div>
       <div className="space-y-6">
         {adding && (
           <Card title="New position">
@@ -260,6 +264,8 @@ function StoryCard({ story, index, position, positions }: { story: Story; index:
   const [lessonsDraft, setLessonsDraft] = useState(story.lessons ?? '');
   const [showHistory, setShowHistory] = useState(false);
   const [refining, setRefining] = useState(false);
+  const [choosingFocus, setChoosingFocus] = useState(false);
+  const [focus, setFocus] = useState('');
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['positions'] });
 
   const save = useMutation({
@@ -350,11 +356,11 @@ function StoryCard({ story, index, position, positions }: { story: Story; index:
           </LinkButton>
           <span className="flex-1" />
           <LinkButton
-            onClick={() => setRefining(true)}
+            onClick={() => story.openSessionId ? setRefining(true) : setChoosingFocus(true)}
             className="text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
-            title="Chat with the agent to tighten this story and add metrics, impact, results and lessons learned"
+            title="Build out this story through a guided conversation about your experience"
           >
-            {story.openSessionId ? '● Continue refining' : 'Refine with AI'}
+            {story.openSessionId ? 'Continue story conversation' : 'Expand story'}
           </LinkButton>
           <LinkButton
             onClick={() => {
@@ -393,9 +399,21 @@ function StoryCard({ story, index, position, positions }: { story: Story; index:
           </LinkButton>
         </div>
       )}
+      {choosingFocus && !editing && (
+        <div className="mt-3 space-y-3 rounded-md border border-indigo-200 bg-white p-3">
+          <Field label="What would you like to expand?" hint="Optional. Leave blank for a general review of the story.">
+            <AutoTextarea minRows={2} maxLength={2000} value={focus} onChange={e => setFocus(e.target.value)} placeholder="For example: my leadership role, how I solved the problem, project scope, or evidence of a specific skill." />
+          </Field>
+          <p className="text-xs text-slate-500">Share only details you can confirm. The agent will ask for missing information and help develop a draft before you save it.</p>
+          <div className="flex gap-2">
+            <Button variant="primary" onClick={() => { setChoosingFocus(false); setRefining(true); }}>Start guided questions</Button>
+            <Button onClick={() => setChoosingFocus(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
       {showHistory && !editing && <VersionHistory story={story} />}
       {error && <div className="mt-2"><ErrorText>{error.message}</ErrorText></div>}
-      {refining && <RefinePanel story={story} position={position} onClose={() => setRefining(false)} />}
+      {refining && <RefinePanel story={story} position={position} focus={focus} onClose={() => setRefining(false)} />}
     </div>
   );
 }

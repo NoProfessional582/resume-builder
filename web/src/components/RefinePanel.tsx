@@ -27,13 +27,13 @@ const COVERAGE_LABELS: Record<(typeof COVERAGE_KEYS)[number], string> = {
  * Side panel for refining one story with the agent: it cleans up the draft, asks about
  * metrics, impact, results and lessons learned, and folds the answers back in.
  */
-export function RefinePanel({ story, position, onClose, gap }: { story: Story; position: Position; onClose: () => void; gap?: { versionId: number; gapIndex: number; reviewedAt: number } }) {
+export function RefinePanel({ story, position, onClose, gap, focus }: { story: Story; position: Position; onClose: () => void; gap?: { versionId: number; gapIndex: number; reviewedAt: number }; focus?: string }) {
   const queryClient = useQueryClient();
   const [sessionId, setSessionId] = useState<number | null>(gap ? null : story.openSessionId);
 
   // Open a new session, or resume the one already open for this story.
   const start = useMutation({
-    mutationFn: () => api.startRefine(story.id, gap),
+    mutationFn: () => api.startRefine(story.id, gap ?? (focus?.trim() ? { focus: focus.trim() } : undefined)),
     onSuccess: (s) => {
       queryClient.setQueryData(['refine', s.id], s);
       setSessionId(s.id);
@@ -151,6 +151,7 @@ function SessionBody({ session, onClose }: { session: RefineSession; onClose: ()
   return (
     <>
       <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        {session.focus && <div className="rounded-md border border-indigo-100 bg-indigo-50 p-3 text-sm whitespace-pre-wrap text-indigo-900">{session.focus}</div>}
         {lastAgent?.coverage && <CoverageChips coverage={lastAgent.coverage} />}
 
         <section>

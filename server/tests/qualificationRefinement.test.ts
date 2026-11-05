@@ -28,5 +28,37 @@ db.prepare('UPDATE refine_session SET current_run_id = NULL WHERE id = ?').run(s
 acceptDraft(session.id, 'I coordinated deployment improvements with two teams.', null);
 assert.equal(listPositions()[0].stories[0].text, 'I coordinated deployment improvements with two teams.');
 assert.equal(listPositions()[0].stories[0].versionCount, 2);
-console.log('Qualification refinement persistence, context, conflicts and acceptance passed.');
+const focusedStory = createStory(position, 'I coordinated a project.');
+const focused = startOrResume(focusedStory.id, 'Story development focus: Leadership and project scope');
+assert.equal(focused.focus, 'Story development focus: Leadership and project scope');
+assert.equal(input.qualificationContext, focused.focus);
+assert.equal(startOrResume(focusedStory.id).id, focused.id);
+assert.equal(startOrResume(focusedStory.id).focus, focused.focus);
+const generalStory = createStory(position, 'I improved team reporting.');
+const general = startOrResume(generalStory.id);
+assert.equal(general.focus, null);
+assert.equal(input.qualificationContext, undefined);
+console.log('Qualification and work history conversations: persistence, focus, resume, conflicts and acceptance passed.');
+
+// Exercise the HTTP boundary used by the work history panel.
+const { default: Fastify } = await import('fastify');
+const { ZodError } = await import('zod');
+const { refineRoutes } = await import('../src/routes/refine.ts');
+const app = Fastify();
+app.setErrorHandler((error, _request, reply) => {
+  reply.code(error instanceof ZodError ? 400 : 500).send({ error: error.message });
+});
+await app.register(refineRoutes);
+for (const payload of [undefined, {}, { focus: 'Leadership and scope' }]) {
+  const routeStory = createStory(position, 'I led a process improvement.');
+  const response = await app.inject({ method: 'POST', url: `/stories/${routeStory.id}/refine`, ...(payload === undefined ? {} : { payload }) });
+  assert.equal(response.statusCode, 200, response.body);
+  assert.equal(response.json().focus, payload && 'focus' in payload ? 'Story development focus: Leadership and scope' : null);
+}
+for (const payload of [{ versionId: 1 }, { focus: '' }, { gapIndex: 0 }]) {
+  const response = await app.inject({ method: 'POST', url: `/stories/${generalStory.id}/refine`, payload });
+  assert.equal(response.statusCode, 400, response.body);
+}
+await app.close();
+console.log('Story expansion routes accept general and focused requests and reject incomplete context.');
 

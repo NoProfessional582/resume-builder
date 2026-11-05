@@ -54,6 +54,7 @@ export interface RefineSessionView {
   storyId: number;
   status: SessionStatus;
   originalText: string;
+  focus: string | null;
   /** The latest draft (the agent's, or the user's own edit). */
   currentDraft: string;
   /** The latest lessons learned (kept apart from the story; never printed). */
@@ -147,6 +148,7 @@ export function getSession(id: number): RefineSessionView {
     storyId: session.story_id,
     status: session.status,
     originalText: session.original_text,
+    focus: session.qualification_context,
     currentDraft: currentDraft(session, messages),
     currentLessons: currentLessons(session, messages),
     messages: messages.map(toMessage),

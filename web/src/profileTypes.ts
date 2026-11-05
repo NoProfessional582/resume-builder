@@ -34,6 +34,7 @@ export interface RefineSession {
   storyId: number;
   status: 'open' | 'accepted' | 'discarded';
   originalText: string;
+  focus: string | null;
   currentDraft: string;
   currentLessons: string | null;
   messages: RefineMessage[];

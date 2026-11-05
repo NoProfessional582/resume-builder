@@ -10,9 +10,15 @@ const idParams = z.object({ id: z.coerce.number().int().positive() });
 export async function refineRoutes(app: FastifyInstance): Promise<void> {
   // Opens (or resumes) the refinement chat for a story.
   app.post('/stories/:id/refine', async (req) => {
-    const body = z.object({ versionId: z.number().int().positive(), gapIndex: z.number().int().nonnegative(), reviewedAt: z.number() }).optional().parse(req.body);
+    const body = z.union([
+      z.object({ versionId: z.number().int().positive(), gapIndex: z.number().int().nonnegative(), reviewedAt: z.number() }),
+      z.object({ focus: z.string().trim().min(1).max(2000) }),
+      // General story expansion has no review or focus context.
+      z.object({}).strict(),
+    ]).optional().parse(req.body);
     let context: string | undefined;
-    if (body) {
+    if (body && "focus" in body) context = "Story development focus: " + body.focus;
+    if (body && "versionId" in body) {
       const review = getReview(body.versionId);
       const gap = review?.review?.missingQualifications[body.gapIndex];
       if (!gap || review?.status !== 'ready' || review.stale || review.updatedAt !== body.reviewedAt)
