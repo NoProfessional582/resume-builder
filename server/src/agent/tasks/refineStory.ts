@@ -6,6 +6,7 @@ export const COVERAGE_KEYS = ['context', 'action', 'metrics', 'impact', 'results
 const level = z.enum(['present', 'partial', 'missing']);
 
 export interface RefineStoryInput {
+  qualificationContext?: string;
   position: {
     title: string;
     organization: string;
@@ -56,6 +57,10 @@ export const refineStoryTask: TaskDef<RefineStoryInput, RefineStoryOutput> = {
     return `You are helping the user strengthen one "story" from their work history. Stories are the raw
 material the app later turns into tailored résumé bullets. Follow the user's style guide below.
 
+${input.qualificationContext ? `## Qualification follow-up
+${input.qualificationContext}
+Focus this multi-turn conversation on real evidence for this qualification. Ask one focused question at a time about personal role, actions, scope and results. Never treat the requirement as a fact about the user. Never invent experience, numbers or credentials. If the user lacks this experience or wants to skip, acknowledge that and stop probing; preserve only confirmed facts. Keep unrelated existing story facts.
+` : ""}
 ## Style guide
 ${styleGuide('common', 'stories')}
 

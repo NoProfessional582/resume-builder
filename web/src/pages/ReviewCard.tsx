@@ -1,3 +1,4 @@
+import { QualificationFollowUp } from '../components/QualificationFollowUp';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { api } from '../api';
@@ -107,6 +108,7 @@ export function ReviewCard({ versionId, dirty }: { versionId: number; dirty: boo
     >
       <ReviewSummary view={r} review={r.review} />
       {open && <ReviewDetails review={r.review} />}
+      <QualificationFollowUp versionId={versionId} view={r} disabled={dirty || r.stale} />
       <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
         {scoreButton('Score again')}
         <span className="text-xs text-slate-500">

@@ -78,7 +78,7 @@ export const api = {
   storyVersions: (id: number) => request<StoryVersion[]>('GET', `/stories/${id}/versions`),
   restoreVersion: (id: number, versionId: number) => request<Story>('POST', `/stories/${id}/restore`, { versionId }),
 
-  startRefine: (storyId: number) => request<RefineSession>('POST', `/stories/${storyId}/refine`, {}),
+  startRefine: (storyId: number, gap?: { versionId: number; gapIndex: number; reviewedAt: number }) => request<RefineSession>('POST', `/stories/${storyId}/refine`, gap),
   getRefine: (id: number) => request<RefineSession>('GET', `/refine/${id}`),
   sendRefine: (id: number, content: string, draft: string, lessons: string) =>
     request<RefineSession>('POST', `/refine/${id}/messages`, { content, draft, lessons }),

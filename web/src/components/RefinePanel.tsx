@@ -27,13 +27,13 @@ const COVERAGE_LABELS: Record<(typeof COVERAGE_KEYS)[number], string> = {
  * Side panel for refining one story with the agent: it cleans up the draft, asks about
  * metrics, impact, results and lessons learned, and folds the answers back in.
  */
-export function RefinePanel({ story, position, onClose }: { story: Story; position: Position; onClose: () => void }) {
+export function RefinePanel({ story, position, onClose, gap }: { story: Story; position: Position; onClose: () => void; gap?: { versionId: number; gapIndex: number; reviewedAt: number } }) {
   const queryClient = useQueryClient();
-  const [sessionId, setSessionId] = useState<number | null>(story.openSessionId);
+  const [sessionId, setSessionId] = useState<number | null>(gap ? null : story.openSessionId);
 
   // Open a new session, or resume the one already open for this story.
   const start = useMutation({
-    mutationFn: () => api.startRefine(story.id),
+    mutationFn: () => api.startRefine(story.id, gap),
     onSuccess: (s) => {
       queryClient.setQueryData(['refine', s.id], s);
       setSessionId(s.id);

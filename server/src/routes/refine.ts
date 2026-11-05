@@ -1,3 +1,5 @@
+import { getReview } from '../resume/reviews.ts';
+import { ConflictError } from '../resume/refine.ts';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { acceptDraft, discardSession, getSession, retryTurn, sendMessage, startOrResume } from '../resume/refine.ts';
@@ -7,7 +9,18 @@ const idParams = z.object({ id: z.coerce.number().int().positive() });
 
 export async function refineRoutes(app: FastifyInstance): Promise<void> {
   // Opens (or resumes) the refinement chat for a story.
-  app.post('/stories/:id/refine', async (req) => startOrResume(idParams.parse(req.params).id));
+  app.post('/stories/:id/refine', async (req) => {
+    const body = z.object({ versionId: z.number().int().positive(), gapIndex: z.number().int().nonnegative(), reviewedAt: z.number() }).optional().parse(req.body);
+    let context: string | undefined;
+    if (body) {
+      const review = getReview(body.versionId);
+      const gap = review?.review?.missingQualifications[body.gapIndex];
+      if (!gap || review?.status !== 'ready' || review.stale || review.updatedAt !== body.reviewedAt)
+        throw new ConflictError('Score the saved résumé again before starting this conversation.');
+      context = 'Qualification: ' + gap.requirement + '\nReview finding: ' + gap.note;
+    }
+    return startOrResume(idParams.parse(req.params).id, context);
+  });
 
   app.get('/refine/:id', async (req) => getSession(idParams.parse(req.params).id));
 

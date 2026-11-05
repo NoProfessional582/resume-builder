@@ -15,6 +15,7 @@ interface SessionRow {
   story_id: number;
   status: SessionStatus;
   original_text: string;
+  qualification_context: string | null;
   original_lessons: string | null;
   current_run_id: number | null;
   error: string | null;
@@ -176,6 +177,7 @@ function buildInput(session: SessionRow): RefineStoryInput {
   const lastWithEdits = [...messages].reverse().find((m) => m.draft || m.lessons !== null);
 
   return {
+    qualificationContext: session.qualification_context ?? undefined,
     position: {
       title: p.title,
       organization: p.organization,
@@ -209,7 +211,7 @@ function startTurn(session: SessionRow): void {
 }
 
 /** Opens a refinement for a story, or returns the one already open. */
-export function startOrResume(storyId: number): RefineSessionView {
+export function startOrResume(storyId: number, context?: string): RefineSessionView {
   const story = db.prepare('SELECT current_text, lessons FROM story WHERE id = ?').get(storyId) as
     | { current_text: string; lessons: string | null }
     | undefined;
@@ -218,7 +220,11 @@ export function startOrResume(storyId: number): RefineSessionView {
   const open = db
     .prepare(`SELECT id FROM refine_session WHERE story_id = ? AND status = 'open' ORDER BY id DESC LIMIT 1`)
     .get(storyId) as { id: number } | undefined;
-  if (open) return getSession(open.id);
+  if (open) {
+    if (context && getSessionRow(open.id).qualification_context !== context)
+      throw new ConflictError('Finish the existing story conversation in Work history first.');
+    return getSession(open.id);
+  }
 
   const now = Date.now();
   const { lastInsertRowid } = db
@@ -228,6 +234,7 @@ export function startOrResume(storyId: number): RefineSessionView {
     )
     .run(storyId, story.current_text, story.lessons, now, now);
   const id = Number(lastInsertRowid);
+  if (context) db.prepare('UPDATE refine_session SET qualification_context = ? WHERE id = ?').run(context, id);
   startTurn(getSessionRow(id));
   return getSession(id);
 }
