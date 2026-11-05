@@ -1,3 +1,4 @@
+import { PdfViewer } from '../components/PdfViewer';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -87,11 +88,7 @@ export function TemplatePage() {
                   Download .docx
                 </a>
               </div>
-              <iframe
-                title="Profile preview"
-                className="h-[80vh] w-full rounded-md border border-slate-200"
-                src={`/api/template/preview/profile-preview.pdf?t=${previewKey}`}
-              />
+              <PdfViewer title="Profile preview" src={`/api/template/preview/profile-preview.pdf?t=${previewKey}`} />
             </div>
           )}
         </Card>

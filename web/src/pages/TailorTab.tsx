@@ -1,3 +1,4 @@
+import { PdfViewer } from '../components/PdfViewer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
@@ -318,7 +319,7 @@ function Editor({
         <div className="min-w-0 space-y-5">
           {view.generated && showPdf && (
             <Card title="Preview" actions={<LinkButton onClick={() => setShowPdf(false)}>Hide</LinkButton>}>
-              <iframe title="Résumé preview" className="h-[80vh] w-full rounded border border-slate-200" src={`/api/tailored/${view.id}/files/pdf?t=${fileKey}`} />
+              <PdfViewer title="Résumé preview" src={`/api/tailored/${view.id}/files/pdf?t=${fileKey}`} />
             </Card>
           )}
 

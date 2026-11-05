@@ -1,3 +1,4 @@
+import { PdfViewer } from '../components/PdfViewer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
@@ -475,11 +476,7 @@ function PreviewTab({ id }: { id: number }) {
                 <div className="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">
                   {name === 'original' ? 'Original' : 'Rebuilt from template'}
                 </div>
-                <iframe
-                  title={name}
-                  className="h-[75vh] w-full rounded-md border border-slate-200"
-                  src={`/api/imports/${id}/files/${name}.pdf?t=${key}`}
-                />
+                <PdfViewer title={name} src={`/api/imports/${id}/files/${name}.pdf?t=${key}`} />
               </div>
             ))}
           </div>
