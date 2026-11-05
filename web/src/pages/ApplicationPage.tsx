@@ -58,7 +58,7 @@ export function ApplicationPage() {
           </>
         }
       />
-      <div className="mb-5 flex gap-1 overflow-x-auto border-b border-slate-200">
+      <nav aria-label="Application sections" className="mb-5 flex flex-wrap gap-1 border-b border-slate-200">
         {(
           [
             ['overview', 'Overview'],
@@ -71,14 +71,15 @@ export function ApplicationPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium ${
+            aria-current={tab === t ? 'page' : undefined}
+            className={`shrink-0 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium ${
               tab === t ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
             {label}
           </button>
         ))}
-      </div>
+      </nav>
       {tab === 'overview' && <WorkspaceTab id={id} />}
       {tab === 'analysis' && <AnalysisTab app={a} />}
       {tab === 'posting' && <PostingTab app={a} />}

@@ -1,5 +1,6 @@
 import { PdfViewer } from '../components/PdfViewer';
 import { ApplicationResumeUpload } from '../components/ApplicationResumeUpload';
+import { StoryMatchingCard } from '../components/StoryMatchingCard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
@@ -34,13 +35,6 @@ export function TailorTab({ app }: { app: Application }) {
   const list = versions.data ?? [];
   const currentId = selected ?? list[0]?.id ?? null;
 
-  if (app.analysis?.status !== 'ready') {
-    return (
-      <Card>
-        <p className="text-sm text-slate-600">Tailoring uses the job analysis. Wait for it to finish (Analysis tab).</p>
-      </Card>
-    );
-  }
   if (versions.error) return <ErrorText>{versions.error.message}</ErrorText>;
   if (!versions.data) return <p className="text-sm text-slate-500">Loading…</p>;
 
@@ -53,7 +47,7 @@ export function TailorTab({ app }: { app: Application }) {
 
   return (
     <div className="space-y-5">
-      <ApplicationResumeUpload applicationId={app.id} onSaved={onStarted} />
+      <ApplicationResumeUpload key={app.id} applicationId={app.id} onSaved={onStarted} />
       {list.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="flex min-w-0 flex-1 items-center gap-2">
@@ -78,7 +72,8 @@ export function TailorTab({ app }: { app: Application }) {
         </div>
       )}
 
-      {(showSettings || list.length === 0) && (
+      {app.analysis?.status !== 'ready' && <Card><p className="text-sm text-slate-600">You can upload and score an existing résumé now. Finish the job analysis in the Analysis tab to tailor a new version.</p></Card>}
+      {app.analysis?.status === 'ready' && (showSettings || list.length === 0) && (
         <SettingsCard
           appId={app.id}
           initial={list.length ? undefined : DEFAULT_SETTINGS}
@@ -339,6 +334,7 @@ function Editor({
 
   return (
     <div className="space-y-5">
+      {view.sourceImportId != null && <StoryMatchingCard key={JSON.stringify(view.content)} view={view} dirty={dirty} onSaved={v => { setContent(v.content!); update(v); }} />}
       <ReviewCard versionId={view.id} dirty={dirty} />
       <div className="grid items-start gap-6 @min-[64rem]:grid-cols-[minmax(0,1fr)_19rem]">
         <div className="min-w-0 space-y-5">

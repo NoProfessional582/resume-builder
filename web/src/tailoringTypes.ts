@@ -65,6 +65,7 @@ export interface Checks {
 }
 
 export interface TailoredView {
+  sourceImportId: number | null;
   id: number;
   applicationId: number;
   version: number;

@@ -36,6 +36,7 @@ type JobKind = 'tailor' | 'revise' | 'fit';
 const MAX_FIT_ROUNDS = 3;
 
 interface Row {
+  source_import_id: number | null;
   id: number;
   application_id: number;
   status: Status;
@@ -60,6 +61,7 @@ interface Row {
 }
 
 export interface TailoredView {
+  sourceImportId: number | null;
   id: number;
   applicationId: number;
   version: number;
@@ -211,6 +213,7 @@ export function getTailored(id: number): TailoredView {
   return {
     id: row.id,
     applicationId: row.application_id,
+    sourceImportId: row.source_import_id,
     version: versionOf(row),
     label: row.label,
     status: row.status,

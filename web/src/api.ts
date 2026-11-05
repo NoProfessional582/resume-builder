@@ -20,6 +20,12 @@ export class ApiError extends Error {
   }
 }
 
+export interface StoryMatch {
+  index: number;
+  positionId: number | null;
+  bullets: { index: number; storyIds: number[]; reason: string }[];
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(`/api${path}`, {
     method,
@@ -58,6 +64,9 @@ export const api = {
     return data as { id: number; runId: number };
   },
   getImport: (id: number) => request<ImportView>('GET', `/imports/${id}`),
+  suggestStoryMatches: (id: number) => request<{ matches: StoryMatch[]; expectedContent: string }>('POST', `/tailored/${id}/story-matches/suggest`, {}),
+  saveStoryMatches: (id: number, matches: StoryMatch[], expectedContent: string) =>
+    request<TailoredView>('PUT', `/tailored/${id}/story-matches`, { matches, expectedContent }),
   attachApplicationResume: (id: number, importId: number) =>
     request<TailoredView>('POST', `/applications/${id}/resume`, { importId }),
   updateBlock: (id: number, index: number, change: { role?: Role; pattern?: string | null }) =>
