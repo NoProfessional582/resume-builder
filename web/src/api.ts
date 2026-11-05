@@ -58,6 +58,8 @@ export const api = {
     return data as { id: number; runId: number };
   },
   getImport: (id: number) => request<ImportView>('GET', `/imports/${id}`),
+  attachApplicationResume: (id: number, importId: number) =>
+    request<TailoredView>('POST', `/applications/${id}/resume`, { importId }),
   updateBlock: (id: number, index: number, change: { role?: Role; pattern?: string | null }) =>
     request<ImportView>('PUT', `/imports/${id}/blocks/${index}`, change),
   previewImport: (id: number) => request<PreviewResult>('POST', `/imports/${id}/preview`, {}),
@@ -98,8 +100,16 @@ export const api = {
   resetAnalysis: (id: number) => request<Application>('POST', `/applications/${id}/analysis/reset`, {}),
 
   listTailored: (applicationId: number) => request<TailoredSummary[]>('GET', `/applications/${applicationId}/tailored`),
-  startTailoring: (applicationId: number, settings: TailorSettings) =>
-    request<TailoredView>('POST', `/applications/${applicationId}/tailored`, settings),
+  startTailoring: async (applicationId: number, settings: TailorSettings) => {
+    if (settings.excludedPositionIds?.length) {
+      let supported = false;
+      try {
+        supported = (await request<{ roleSelection: boolean }>('GET', '/tailoring/capabilities')).roleSelection === true;
+      } catch { /* An older running server does not expose this endpoint. */ }
+      if (!supported) throw new Error('Restart Resume Builder to apply the role-selection update, then try again. Your selections have been kept.');
+    }
+    return request<TailoredView>('POST', `/applications/${applicationId}/tailored`, settings);
+  },
   getTailored: (id: number) => request<TailoredView>('GET', `/tailored/${id}`),
   saveTailored: (id: number, content: TailoredContent) => request<TailoredView>('PUT', `/tailored/${id}/content`, content),
   resetTailored: (id: number) => request<TailoredView>('POST', `/tailored/${id}/reset`, {}),

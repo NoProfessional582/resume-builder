@@ -142,8 +142,8 @@ function buildContent(out: TailorOutput, settings: TailorSettings): TailoredCont
   return {
     summary: out.summary.trim() ? [out.summary.trim()] : profile.summary,
     skills,
-    // Every position stays (no unexplained gaps); titles, employers and dates come from the profile.
-    positions: listPositions().map((p) => {
+    // Only selected roles are printed; facts still come from the saved work history.
+    positions: listPositions().filter((p) => !settings.excludedPositionIds.includes(p.id)).map((p) => {
       const t = byId.get(p.id);
       return {
         positionId: p.id,
@@ -253,8 +253,9 @@ function tailorInput(applicationId: number, settings: TailorSettings): TailorInp
   const app = getApplication(applicationId);
   const analysis = requireAnalysis(applicationId);
   const profile = loadProfileContent();
-  const positions = listPositions();
-  if (!positions.length) throw new ConflictError('Add your work history before tailoring.');
+  const allPositions = listPositions();
+  if (!allPositions.length) throw new ConflictError('Add your work history before tailoring.');
+  const positions = allPositions.filter((p) => !settings.excludedPositionIds.includes(p.id));
   return {
     job: { company: app.company, roleTitle: app.roleTitle, analysis },
     profile: {

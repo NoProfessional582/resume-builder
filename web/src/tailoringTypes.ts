@@ -6,6 +6,7 @@ export interface TailorSettings {
   minBullets: number;
   maxBullets: number;
   includeDescriptions: boolean;
+  excludedPositionIds?: number[];
   instructions: string;
   autoFit: boolean;
 }

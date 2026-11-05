@@ -15,11 +15,17 @@ import {
   tailoredFile,
 } from '../resume/tailoring.ts';
 import { getReview, startReview } from '../resume/reviews.ts';
+import { attachApplicationResume } from '../resume/applicationResume.ts';
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 const DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 export async function tailoringRoutes(app: FastifyInstance): Promise<void> {
+  app.post('/applications/:id/resume', async (req, reply) => {
+    const { importId } = z.object({ importId: z.number().int().positive() }).parse(req.body);
+    return reply.code(201).send(attachApplicationResume(idParams.parse(req.params).id, importId));
+  });
+  app.get('/tailoring/capabilities', async () => ({ roleSelection: true }));
   app.get('/applications/:id/tailored', async (req) => listTailored(idParams.parse(req.params).id));
 
   // Starts a new tailoring run (a new version).

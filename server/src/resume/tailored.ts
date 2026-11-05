@@ -7,6 +7,7 @@ export const tailorSettingsSchema = z
     minBullets: z.number().int().min(0).max(8).default(1),
     maxBullets: z.number().int().min(1).max(10).default(4),
     includeDescriptions: z.boolean().default(true),
+    excludedPositionIds: z.array(z.number().int().positive()).default([]),
     instructions: z.string().trim().max(4000).default(''),
     /** After writing, build the .docx and trim until it fits the page target. */
     autoFit: z.boolean().default(true),

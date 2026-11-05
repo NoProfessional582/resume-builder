@@ -1,4 +1,5 @@
 import { PdfViewer } from '../components/PdfViewer';
+import { ApplicationResumeUpload } from '../components/ApplicationResumeUpload';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { api } from '../api';
@@ -52,6 +53,7 @@ export function TailorTab({ app }: { app: Application }) {
 
   return (
     <div className="space-y-5">
+      <ApplicationResumeUpload applicationId={app.id} onSaved={onStarted} />
       {list.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <label className="flex min-w-0 flex-1 items-center gap-2">
@@ -109,6 +111,7 @@ function SettingsCard({
   onCancel?: () => void;
 }) {
   // Start from the last version's settings when there is one.
+  const roles = useQuery({ queryKey: ['positions'], queryFn: api.listPositions });
   const last = useQuery({
     queryKey: ['tailored', versionId],
     queryFn: () => api.getTailored(versionId!),
@@ -116,8 +119,13 @@ function SettingsCard({
   });
   const [s, setS] = useState<TailorSettings | null>(initial ?? null);
   useEffect(() => {
-    if (!s && last.data) setS(last.data.settings);
-  }, [last.data, s]);
+    if (!s && last.data && roles.data) {
+      const included = last.data.content?.positions.map((p) => p.positionId);
+      setS({ ...last.data.settings, excludedPositionIds: included
+        ? roles.data.filter((p) => !included.includes(p.id)).map((p) => p.id)
+        : last.data.settings.excludedPositionIds ?? [] });
+    }
+  }, [last.data, roles.data, s]);
   const start = useMutation({ mutationFn: (settings: TailorSettings) => api.startTailoring(appId, settings), onSuccess: onStarted });
 
   const settings = s ?? DEFAULT_SETTINGS;
@@ -136,6 +144,22 @@ function SettingsCard({
           start.mutate(settings);
         }}
       >
+        <fieldset className="space-y-3 @min-[40rem]:col-span-3">
+          <legend className="mb-2 text-sm font-semibold">Roles to include</legend>
+          <p className="text-xs text-slate-500">Uncheck roles that don’t apply to this job. Your full work history stays available for other résumés.</p>
+          {roles.isPending && <p className="text-sm text-slate-500">Loading work history…</p>}
+          {roles.error && <ErrorText>{roles.error.message}</ErrorText>}
+          {roles.data?.length === 0 && <p className="text-sm text-slate-500">Add roles in Work history first.</p>}
+          {roles.data?.map((p) => (
+            <label key={p.id} className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1" checked={!(settings.excludedPositionIds ?? []).includes(p.id)} onChange={(e) => {
+                const excluded = settings.excludedPositionIds ?? [];
+                set({ excludedPositionIds: e.target.checked ? excluded.filter((id) => id !== p.id) : [...excluded, p.id] });
+              }} />
+              <span>{p.title} · {p.organization}<span className="block text-xs text-slate-500">{displayRange(p.start, p.end)}</span></span>
+            </label>
+          ))}
+        </fieldset>
         <Field label="Target length">
           <select className={inputClass} value={settings.targetPages} onChange={(e) => set({ targetPages: Number(e.target.value) })}>
             <option value={1}>1 page</option>
@@ -168,7 +192,7 @@ function SettingsCard({
           </Field>
         </div>
         <div className="flex items-center gap-2 @min-[40rem]:col-span-3">
-          <Button variant="primary" type="submit" disabled={start.isPending}>
+          <Button variant="primary" type="submit" disabled={start.isPending || !roles.data || (versionId != null && !initial && !s)}>
             {start.isPending ? 'Starting…' : 'Tailor résumé'}
           </Button>
           {onCancel && <Button type="button" onClick={onCancel}>Cancel</Button>}
@@ -281,6 +305,7 @@ function Editor({
 }) {
   const queryClient = useQueryClient();
   const [content, setContent] = useState<TailoredContent>(() => structuredClone(view.content!));
+  const [removedPositions, setRemovedPositions] = useState<TailoredContent['positions']>([]);
   const [showPdf, setShowPdf] = useState(false);
   const [fitPages, setFitPages] = useState(view.settings.targetPages);
   const [request, setRequest] = useState('');
@@ -357,8 +382,32 @@ function Editor({
             <SkillLimits skills={content.skills} />
           </Card>
 
+          <Card title="Roles on this résumé">
+            <p className="text-sm text-slate-600">Remove roles that don’t apply to this job. Your full work history and other résumés stay unchanged. Save your changes, then rebuild the Word file.</p>
+            {content.positions.length === 0 && <p className="mt-3 text-sm text-slate-500">No roles included.</p>}
+            {removedPositions.length > 0 && (
+              <ul className="mt-3 space-y-2 text-sm" aria-live="polite">
+                {removedPositions.map((p) => (
+                  <li key={p.positionId} className="flex flex-wrap items-center justify-between gap-2">
+                    <span>Removed: {p.title} · {p.organization}</span>
+                    <LinkButton onClick={() => {
+                      const order = view.content!.positions.map((position) => position.positionId);
+                      set({ positions: [...content.positions, p].sort((a, b) => order.indexOf(a.positionId) - order.indexOf(b.positionId)) });
+                      setRemovedPositions(removedPositions.filter((position) => position.positionId !== p.positionId));
+                    }}>Undo removal</LinkButton>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
           {content.positions.map((p, pi) => (
-            <Card key={p.positionId} title={`${p.title} · ${p.organization}`}>
+            <Card key={p.positionId} title={`${p.title} · ${p.organization}`} actions={
+              <LinkButton danger aria-label={`Remove ${p.title} at ${p.organization} from résumé`} onClick={() => {
+                setRemovedPositions([...removedPositions, p]);
+                set({ positions: content.positions.filter((position) => position.positionId !== p.positionId) });
+              }}>Remove from résumé</LinkButton>
+            }>
               <p className="-mt-2 mb-3 text-xs text-slate-500">{[p.location, displayRange(p.start, p.end)].filter(Boolean).join(' · ')}</p>
               {(p.description !== null || view.settings.includeDescriptions) && (
                 <Field label="Role overview">
